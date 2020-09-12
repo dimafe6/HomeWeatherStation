@@ -16,6 +16,7 @@ extern float externalTemperatureLast24H[RF_SENSORS_COUNT][96];
 extern float externalHumidityLast24H[RF_SENSORS_COUNT][96];
 
 extern float pressureLast24H[24];
+extern uint8_t pressureLast24HmmHg[24];
 extern float temperatureLast24H[96];
 extern float humidityLast24H[96];
 extern unsigned int co2Last24H[96];

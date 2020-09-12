@@ -338,7 +338,7 @@ char getZambrettiChar(float P, PressureTrend trend)
     return result;
 }
 
-String getForecastImage(char zambrettiChar)
+byte getForecastImageNumberFromZambrettiChar(char zambrettiChar)
 {
     int M = month();
 
@@ -346,7 +346,7 @@ String getForecastImage(char zambrettiChar)
     {
     case 'A':
     case 'B':
-        return "/sunny.jpg";
+        return 1;
         break;
     case 'D':
     case 'H':
@@ -356,7 +356,17 @@ String getForecastImage(char zambrettiChar)
     case 'N':
     case 'G':
     case 'I':
-        return "/expectrain.jpg";
+        //Winter
+        if (M < 4 || M > 9)
+        {
+            return 3;
+            break;
+        }
+        else
+        {
+            return 2;
+            break;
+        }
         break;
     case 'R':
     case 'U':
@@ -367,33 +377,32 @@ String getForecastImage(char zambrettiChar)
         //Winter
         if (M < 4 || M > 9)
         {
-            return "/snow.jpg";
+            return 6;
             break;
         }
         else
         {
-            return "/rain.jpg";
+            return 5;
             break;
         }
-
     case 'Z':
     case 'Y':
-        return "/storm.jpg";
+        return 7;
         break;
     case 'P':
     case 'J':
     case 'L':
     case 'M':
     case 'T':
-        return "/cloudy.jpg";
+        return 8;
         break;
     case 'C':
     case 'F':
     case 'Q':
-        return "/mostlysunny.jpg";
+        return 4;
         break;
     default:
-        return "/sunny.jpg";
+        return 9;
         break;
         break;
     }

@@ -12,5 +12,6 @@ void updatePressureHistory();
 void updateTemperatureHistory();
 void updateHumidityHistory();
 void updateCO2History();
+byte getForecastImageNumber();
 
 #endif

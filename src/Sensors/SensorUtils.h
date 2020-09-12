@@ -14,7 +14,8 @@ struct InternalSensorData
   float humidity;
   float humidityMin = NULL;
   float humidityMax = NULL;
-  float pressure; //Pa
+  float pressure; //hPa
+  int pressureMmHg;
   float dewPoint;
   int16_t humIndex;
   int lux;
@@ -74,6 +75,6 @@ String getZambrettiExplanation(char c);
 
 char getZambrettiChar(float P, PressureTrend trend);
 
-String getForecastImage(char zambrettiChar);
+byte getForecastImageNumberFromZambrettiChar(char zambrettiChar);
 
 #endif

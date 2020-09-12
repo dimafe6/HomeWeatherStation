@@ -52,7 +52,8 @@ void readBME280()
         internalSensorData.humidityMax = internalSensorData.humidity;
     }
 
-    internalSensorData.pressure = bme280.readFloatPressure() / 100.0F; //Pa
+    internalSensorData.pressure = bme280.readFloatPressure() / 100.0F; //hPa
+    internalSensorData.pressureMmHg = internalSensorData.pressure / 1.33322387415F;
     internalSensorData.dewPoint = (bme280.dewPointC() * 100) / 100;
     internalSensorData.humIndex = humindex(internalSensorData.temperature, internalSensorData.dewPoint);
 }

@@ -10,7 +10,7 @@ unsigned long lastExternalHumidityHistoryUpdateTime = EXTERNAL_HUMIDITY_HISTORY_
 void initRF()
 {
   radio.begin();
-  Serial.println("RF chip status:");
+  Serial.println("\nRF chip status:");
   Serial.println(radio.isChipConnected());
   radio.setAutoAck(false);
   radio.setChannel(110);
@@ -64,7 +64,7 @@ void readExternalSensorData()
       prevExternalSensorData[pipeNum - 1] = externalSensorData[pipeNum - 1];
 
       externalSensorData[pipeNum - 1].sensorId = pipeNum;
-      externalSensorData[pipeNum - 1].measurementTime = Rtc.GetDateTime().Epoch32Time();
+      externalSensorData[pipeNum - 1].measurementTime = rtcEpoch32Time();
 
       externalSensorData[pipeNum - 1].humidity = externalHumidityFilter.filtered(float(externalSensor.humidity) / 100);
       if (externalSensorData[pipeNum - 1].humidity < externalSensorData[pipeNum - 1].humidityMin || externalSensorData[pipeNum - 1].humidityMin == NULL)
@@ -105,8 +105,6 @@ void readExternalSensorData()
         updateExternalHumidityHistory();
       }
 
-      Serial.println(sizeof(externalSensor));
-      Serial.println();
       Serial.print("Outdoor sensor ");
       Serial.print(pipeNum);
       Serial.println(":");

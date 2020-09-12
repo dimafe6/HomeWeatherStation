@@ -9,6 +9,7 @@ float externalTemperatureLast24H[RF_SENSORS_COUNT][96] = {0};
 float externalHumidityLast24H[RF_SENSORS_COUNT][96] = {0};
 
 float pressureLast24H[24] = {0};
+uint8_t pressureLast24HmmHg[24] = {0};
 float temperatureLast24H[96] = {0};
 float humidityLast24H[96] = {0};
 unsigned int co2Last24H[96] = {0};

@@ -43,6 +43,7 @@ void WiFiEvent(WiFiEvent_t event)
     break;
   case SYSTEM_EVENT_STA_GOT_IP:
     Serial.println(WiFi.localIP().toString());
+    syncTimeIfRTCInvalid();
     break;
   case SYSTEM_EVENT_STA_LOST_IP:
     Serial.println("Lost IP address and IP address is reset to 0");

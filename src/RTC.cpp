@@ -1,6 +1,12 @@
 #include "RTC.h"
 
 RtcDS3231<TwoWire> Rtc(Wire);
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP);
+
+TimeChangeRule myDST = {"EEST", Last, Sun, Mar, 3, 180};
+TimeChangeRule mySTD = {"EET", Last, Sun, Oct, 4, 120};
+Timezone uaTZ(myDST, mySTD);
 
 void initRtc()
 {
@@ -11,47 +17,17 @@ void initRtc()
 
     Rtc.Begin();
 
-    RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
-
-    if (!Rtc.IsDateTimeValid())
-    {
-        if (Rtc.LastError() != 0)
-        {
-            Serial.print("RTC communications error = ");
-            Serial.println(Rtc.LastError());
-        }
-        else
-        {
-            Serial.println("RTC lost confidence in the DateTime!");
-            Rtc.SetDateTime(compiled);
-        }
-    }
-
     if (!Rtc.GetIsRunning())
     {
         Serial.println("RTC was not actively running, starting now");
         Rtc.SetIsRunning(true);
     }
 
-    RtcDateTime now = Rtc.GetDateTime();
-    setTime(now.Epoch32Time());
-
-    if (now < compiled)
-    {
-        Serial.println("RTC is older than compile time!  (Updating DateTime)");
-        Rtc.SetDateTime(compiled);
-    }
-    else if (now > compiled)
-    {
-        Serial.println("RTC is newer than compile time. (this is expected)");
-    }
-    else if (now == compiled)
-    {
-        Serial.println("RTC is the same as compile time! (not expected but all is fine)");
-    }
+    setSyncProvider(rtcEpoch32Time);
 
     Rtc.Enable32kHzPin(false);
 
+    Serial.println("\nRTC module time:");
     printDateTime(Rtc.GetDateTime());
 }
 
@@ -69,4 +45,41 @@ void printDateTime(const RtcDateTime &dt)
                dt.Minute(),
                dt.Second());
     Serial.print(datestring);
+}
+
+void syncTimeFromNTP()
+{
+    timeClient.begin();
+    timeClient.forceUpdate();
+    timeClient.end();
+
+    setTime(uaTZ.toLocal(timeClient.getEpochTime()));
+    Rtc.SetDateTime(RtcDateTime(year(), month(), day(), hour(), minute(), second()));
+
+    Serial.println("RTC module time:");
+    printDateTime(Rtc.GetDateTime());
+}
+
+time_t rtcEpoch32Time()
+{
+    return Rtc.GetDateTime().Epoch32Time();
+}
+
+void syncTimeIfRTCInvalid()
+{
+    RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
+    RtcDateTime now = Rtc.GetDateTime();
+
+    if (!Rtc.IsDateTimeValid() || now < compiled)
+    {
+        if (Rtc.LastError() != 0)
+        {
+            Serial.print("RTC communications error = ");
+            Serial.println(Rtc.LastError());
+        }
+
+        Serial.println("RTC module time is invalid. Try to sync with NTP...");
+
+        syncTimeFromNTP();
+    }
 }

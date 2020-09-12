@@ -31,8 +31,8 @@ NexText oHumMin = NexText(0, 48, "oHumMin");
 NexText oHumMax = NexText(0, 46, "oHumMax");
 NexWaveform oChart = NexWaveform(0, 9, "oChart");
 
-NexHotspot oHot = NexHotspot(0, 55, "oHot");
-NexText oSensIdx = NexText(0, 18, "oSensIdx");
+NexHotspot oHot = NexHotspot(0, 51, "oHot");
+NexText oSensIdx = NexText(0, 15, "oSensIdx");
 NexPicture forecastImg = NexPicture(0, 19, "forecastImg");
 NexButton menuBtn = NexButton(0, 54, "menuBtn");
 NexText co2 = NexText(0, 14, "co2");
@@ -40,6 +40,10 @@ NexText pressure = NexText(0, 15, "pressure");
 NexWaveform midChart = NexWaveform(0, 7, "midChart");
 
 NexTouch *nextionListen[] = {&oHot, NULL};
+
+NexText dateText = NexText(0, 53, "date");
+NexText hourText = NexText(0, 52, "hour");
+NexText minuteText = NexText(0, 56, "minute");
 
 void initDisplay()
 {
@@ -213,9 +217,29 @@ void redrawDisplay(bool force)
     co2.setText(displayBuffer);
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
-    itoa(getItegerFromFloat(internalSensorData.pressure), displayBuffer, 10);
+    itoa(internalSensorData.pressureMmHg, displayBuffer, 10);
     pressure.setText(displayBuffer);
 
-    //TODO: forecast
+    /* Date and time */
+
+    memset(displayBuffer, 0, sizeof(displayBuffer));
+    snprintf_P(displayBuffer, countof(displayBuffer), PSTR("%02d"), hour());
+    hourText.setText(displayBuffer);
+
+    memset(displayBuffer, 0, sizeof(displayBuffer));
+    snprintf_P(displayBuffer, countof(displayBuffer), PSTR("%02d"), minute());
+    minuteText.setText(displayBuffer);
+
+    memset(displayBuffer, 0, sizeof(displayBuffer));
+    snprintf_P(displayBuffer,
+               countof(displayBuffer),
+               PSTR("%02u.%02u.%02u"),
+               day(),
+               month(),
+               year() - 2000);
+    dateText.setText(displayBuffer);
+
+    /* Forecast */
+    forecastImg.setPic(getForecastImageNumber());
   }
 }

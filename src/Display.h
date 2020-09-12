@@ -5,6 +5,8 @@
 #include "Config.h"
 #include "Globals.h"
 #include "Utils.h"
+#include "Time.h"
+#include "Sensors/Sensors.h"
 #include "./Nextion/Nextion.h"
 
 extern NexTouch *nextionListen[];

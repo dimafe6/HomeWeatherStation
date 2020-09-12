@@ -7,10 +7,14 @@
 #include "Config.h"
 #include <Wire.h>
 #include "Utils.h"
-
-extern RtcDS3231<TwoWire> Rtc;
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+#include <Timezone.h>
 
 void initRtc();
 void printDateTime(const RtcDateTime &dt);
+void syncTimeFromNTP();
+void syncTimeIfRTCInvalid();
+time_t rtcEpoch32Time();
 
 #endif

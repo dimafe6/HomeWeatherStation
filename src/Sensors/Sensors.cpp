@@ -91,20 +91,11 @@ void updatePressureHistory()
   for (int i = 0; i < 23; i++)
   {
     pressureLast24H[i] = pressureLast24H[i + 1];
+    pressureLast24HmmHg[i] = pressureLast24HmmHg[i + 1];
   }
-  pressureLast24H[23] = internalSensorData.pressure;
 
-  /* TEST */
-  float trend = pressureLast24H[23] - pressureLast24H[20];
-  Serial.println("Pressure trend");
-  Serial.println(getPressureTrend(trend));
-  Serial.println("Trend value");
-  Serial.println(trend);
-  Serial.println("Zambretti char");
-  Serial.println(getZambrettiChar(internalSensorData.pressure, getPressureTrend(trend)));
-  Serial.println("Explanation");
-  Serial.println(getZambrettiExplanation(getZambrettiChar(internalSensorData.pressure, getPressureTrend(trend))));
-  /* TEST */
+  pressureLast24H[23] = internalSensorData.pressure;
+  pressureLast24HmmHg[23] = internalSensorData.pressureMmHg;
 }
 
 void updateTemperatureHistory()
@@ -148,4 +139,19 @@ void updateCO2History()
   Serial.println("Trend value");
   Serial.println(trend);
   /* TEST */
+}
+
+byte getForecastImageNumber()
+{
+  // If no pressure for last 24h
+  if (0 == pressureLast24H[23] == pressureLast24H[20])
+  {
+    // Return N/A
+    return getForecastImageNumberFromZambrettiChar(' ');
+  }
+
+  // Trend for last 3 hours
+  float trend = pressureLast24H[23] - pressureLast24H[20];
+
+  return getForecastImageNumberFromZambrettiChar(getZambrettiChar(internalSensorData.pressure, getPressureTrend(trend)));
 }
