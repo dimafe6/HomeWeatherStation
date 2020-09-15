@@ -19,9 +19,7 @@ void setup() {
     initMHZ19();
     initLightMeter();
     initWiFi();
-    initWebServer();
-    readAllSensors(true);    
-    redrawDisplay(true);
+    initWebServer(); 
     //startRadio();
 }
 

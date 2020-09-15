@@ -1,101 +1,5 @@
 #include "SensorUtils.h"
 
-PressureTrend getPressureTrend(float trend)
-{
-    PressureTrend result = PT_STEADY;
-
-    if (trend > 3.5)
-    {
-        result = PT_RISING_FAST;
-    }
-    else if (trend > 1.5 && trend <= 3.5)
-    {
-        result = PT_RISING;
-    }
-    else if (trend > 0.25 && trend <= 1.5)
-    {
-        result = PT_RISING_SLOW;
-    }
-    else if (trend > -0.25 && trend < 0.25)
-    {
-        result = PT_STEADY;
-    }
-    else if (trend >= -1.5 && trend < -0.25)
-    {
-        result = PT_FALLING_SLOW;
-    }
-    else if (trend >= -3.5 && trend < -1.5)
-    {
-        result = PT_FALLING;
-    }
-    else if (trend <= -3.5)
-    {
-        result = PT_FALLING_FAST;
-    }
-
-    return result;
-}
-
-Trend getTemperatureTrend(float trend)
-{
-    Trend result = T_STEADY;
-
-    if (trend > 1)
-    {
-        result = T_RISING;
-    }
-    else if (trend < 1 && trend > -1)
-    {
-        result = T_STEADY;
-    }
-    else
-    {
-        result = T_FALLING;
-    }
-
-    return result;
-}
-
-Trend getHumidityTrend(float trend)
-{
-    Trend result = T_STEADY;
-
-    if (trend > 2)
-    {
-        result = T_RISING;
-    }
-    else if (trend < 2 && trend > -2)
-    {
-        result = T_STEADY;
-    }
-    else
-    {
-        result = T_FALLING;
-    }
-
-    return result;
-}
-
-Trend getCO2Trend(float trend)
-{
-    Trend result = T_STEADY;
-
-    if (trend > 100)
-    {
-        result = T_RISING;
-    }
-    else if (trend < 100 && trend > -100)
-    {
-        result = T_STEADY;
-    }
-    else
-    {
-        result = T_FALLING;
-    }
-
-    return result;
-}
-
 String getZambrettiExplanation(char c)
 {
     String explanation = "";
@@ -186,13 +90,13 @@ String getZambrettiExplanation(char c)
     return explanation;
 }
 
-char getZambrettiChar(float P, PressureTrend trend)
+char getZambrettiChar(float P, Trend trend)
 {
     byte M = month();
     char result = '0';
 
     // FALLING
-    if (trend >= PT_FALLING_SLOW && trend <= PT_FALLING_FAST)
+    if (trend == T_FALLING)
     {
         double Z = 130 - (P / 8.1);
         // A Winter falling generally results in a Z value higher by 1 unit.
@@ -236,10 +140,7 @@ char getZambrettiChar(float P, PressureTrend trend)
             result = 'X';
             break; //Very Unsettled, Rain
         }
-    }
-    // STEADY
-    if (trend == PT_STEADY)
-    {
+    } else if(trend == T_STEADY) {
         double Z = round(147 - (5 * (P / 37.6)));
         switch (int(Z))
         {
@@ -274,9 +175,7 @@ char getZambrettiChar(float P, PressureTrend trend)
             result = 'Z';
             break; //Stormy, much rain
         }
-    }
-    // RISING
-    if (trend >= PT_RISING_FAST && trend <= PT_RISING_SLOW)
+    } else if (trend == T_RISING)
     {
         double Z = 179 - (2 * (P / 12.9));
         //A Summer rising, improves the prospects

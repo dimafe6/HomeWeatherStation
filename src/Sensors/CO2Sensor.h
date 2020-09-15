@@ -8,4 +8,5 @@
 
 void initMHZ19();
 void readMHZ19Data();
+uint32_t getCO2Color();
 #endif

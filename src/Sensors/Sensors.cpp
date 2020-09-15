@@ -5,6 +5,9 @@ unsigned long lastPressureHistoryUpdateTime = PRESSURE_HISTORY_INTERVAL;
 unsigned long lastTemperatureHistoryUpdateTime = TEMPERATURE_HISTORY_INTERVAL;
 unsigned long lastHumidityHistoryUpdateTime = HUMIDITY_HISTORY_INTERVAL;
 unsigned long lastCo2HistoryUpdateTime = CO2_HISTORY_INTERVAL;
+unsigned long lastTemperatureHistoryOneHourUpdateTime = TEMPERATURE_HISTORY_ONE_HOUR_INTERVAL;
+unsigned long lastHumidityHistoryOneHourUpdateTime = HUMIDITY_HISTORY_ONE_HOUR_INTERVAL;
+unsigned long lastCo2HistoryOneHourUpdateTime = CO2_HISTORY_ONE_HOUR_INTERVAL;
 
 void readAllSensors(bool force)
 {
@@ -34,6 +37,13 @@ void readAllSensors(bool force)
       updateTemperatureHistory();
     }
 
+    if (millis() - lastTemperatureHistoryOneHourUpdateTime > TEMPERATURE_HISTORY_ONE_HOUR_INTERVAL)
+    {
+      lastTemperatureHistoryOneHourUpdateTime = millis();
+
+      updateTemperatureHistoryOneHour();
+    }
+
     // Update humidity history
     if (millis() - lastHumidityHistoryUpdateTime > HUMIDITY_HISTORY_INTERVAL)
     {
@@ -42,12 +52,26 @@ void readAllSensors(bool force)
       updateHumidityHistory();
     }
 
+    if (millis() - lastHumidityHistoryOneHourUpdateTime > HUMIDITY_HISTORY_ONE_HOUR_INTERVAL)
+    {
+      lastHumidityHistoryOneHourUpdateTime = millis();
+
+      updateHumidityHistoryOneHour();
+    }
+
     // Update CO2 history
     if (millis() - lastCo2HistoryUpdateTime > CO2_HISTORY_INTERVAL)
     {
       lastCo2HistoryUpdateTime = millis();
 
       updateCO2History();
+    }
+
+    if (millis() - lastCo2HistoryOneHourUpdateTime > CO2_HISTORY_ONE_HOUR_INTERVAL)
+    {
+      lastCo2HistoryOneHourUpdateTime = millis();
+
+      updateCO2HistoryOneHour();
     }
 
     Serial.println();
@@ -105,14 +129,16 @@ void updateTemperatureHistory()
     temperatureLast24H[i] = temperatureLast24H[i + 1];
   }
   temperatureLast24H[95] = internalSensorData.temperature;
+}
 
-  int min = getMin(temperatureLast24H, 96);
-  int max = getMax(temperatureLast24H, 96);
-
-  if (min == max)
+void updateTemperatureHistoryOneHour()
+{
+  for (int i = 0; i < 59; i++)
   {
-    min = 0;
+    temperatureLastHour[i] = temperatureLastHour[i + 1];
   }
+
+  temperatureLastHour[59] = internalSensorData.temperature;
 }
 
 void updateHumidityHistory()
@@ -124,34 +150,41 @@ void updateHumidityHistory()
   humidityLast24H[95] = internalSensorData.humidity;
 }
 
+void updateHumidityHistoryOneHour()
+{
+  for (int i = 0; i < 59; i++)
+  {
+    humidityLastHour[i] = humidityLastHour[i + 1];
+  }
+  humidityLastHour[59] = internalSensorData.humidity;
+}
+
 void updateCO2History()
 {
   for (int i = 0; i < 95; i++)
   {
     co2Last24H[i] = co2Last24H[i + 1];
   }
-  co2Last24H[95] = internalSensorData.co2;
+  co2Last24H[95] = (float)internalSensorData.co2;
+}
 
-  /* TEST */
-  float trend = co2Last24H[95] - co2Last24H[94];
-  Serial.println("CO2 trend");
-  Serial.println(getCO2Trend(trend));
-  Serial.println("Trend value");
-  Serial.println(trend);
-  /* TEST */
+void updateCO2HistoryOneHour()
+{
+  for (int i = 0; i < 59; i++)
+  {
+    co2LastHour[i] = co2LastHour[i + 1];
+  }
+  co2LastHour[59] = (float)internalSensorData.co2;
 }
 
 byte getForecastImageNumber()
 {
-  // If no pressure for last 24h
-  if (0 == pressureLast24H[23] == pressureLast24H[20])
+  // If no pressure for last 3h
+  if (0 == pressureLast24H[21])
   {
     // Return N/A
     return getForecastImageNumberFromZambrettiChar(' ');
   }
 
-  // Trend for last 3 hours
-  float trend = pressureLast24H[23] - pressureLast24H[20];
-
-  return getForecastImageNumberFromZambrettiChar(getZambrettiChar(internalSensorData.pressure, getPressureTrend(trend)));
+  return getForecastImageNumberFromZambrettiChar(getZambrettiChar(internalSensorData.pressure, getTrend(pressureLast24H, 21, 3)));
 }

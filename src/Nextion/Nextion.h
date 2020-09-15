@@ -30,5 +30,6 @@
 #include "./NexWaveform.h"
 #include "./NexNumber.h"
 #include "./NexVariable.h"
+#include "./NexTimer.h"
 
 #endif /* #ifndef __NEXTION_H__ */

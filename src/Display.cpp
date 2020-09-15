@@ -36,7 +36,9 @@ NexText oSensIdx = NexText(0, 15, "oSensIdx");
 NexPicture forecastImg = NexPicture(0, 19, "forecastImg");
 NexButton menuBtn = NexButton(0, 54, "menuBtn");
 NexText co2 = NexText(0, 14, "co2");
+NexText co2Trend = NexText(0, 58, "co2Trend");
 NexText pressure = NexText(0, 15, "pressure");
+NexText pressureTrend = NexText(0, 59, "pressureTrend");
 NexWaveform midChart = NexWaveform(0, 7, "midChart");
 
 NexTouch *nextionListen[] = {&oHot, NULL};
@@ -45,19 +47,22 @@ NexText dateText = NexText(0, 53, "date");
 NexText hourText = NexText(0, 52, "hour");
 NexText minuteText = NexText(0, 56, "minute");
 
+NexTimer timeDotsTimer = NexTimer(0, 57, "timeDotsTimer");
+
 void initDisplay()
 {
   nexInit();
   oHot.attachPush(oHotPopCallback, &oHot);
+  timeDotsTimer.disable();
 }
 
 void oHotPopCallback(void *ptr)
 {
   prevOutdoorSensorId = currentOutdoorSensorId;
   currentOutdoorSensorId++;
-  if (currentOutdoorSensorId > RF_SENSORS_COUNT)
+  if (currentOutdoorSensorId >= RF_SENSORS_COUNT)
   {
-    currentOutdoorSensorId = 1;
+    currentOutdoorSensorId = 0;
   }
 
   memset(displayBuffer, 0, sizeof(displayBuffer));
@@ -68,14 +73,19 @@ void oHotPopCallback(void *ptr)
 
 void redrawDisplay(bool force)
 {
+  force = force || prevOutdoorSensorId != currentOutdoorSensorId;
+
   if ((millis() - lastDisplayUpdateTime > UPDATE_DISPLAY_INTERVAL) || force)
   {
     lastDisplayUpdateTime = millis();
 
-    force = force || prevOutdoorSensorId != currentOutdoorSensorId;
-    int sensorIndex = currentOutdoorSensorId > 0 ? currentOutdoorSensorId - 1 : currentOutdoorSensorId;
     char buff[10] = {0};
     char output[200];
+
+    if (year() > 2000)
+    {
+      timeDotsTimer.enable();
+    }
 
     /* Indoor */
 
@@ -88,16 +98,22 @@ void redrawDisplay(bool force)
     snprintf_P(displayBuffer, countof(displayBuffer), PSTR(".%d"), getFractionFromFloat(internalSensorData.temperature));
     iTempFract.setText(displayBuffer);
 
-    switch (getTemperatureTrend(temperatureLast24H[95] - temperatureLast24H[94]))
+    switch (getTrend(temperatureLastHour, 0, 60))
     {
     case T_RISING:
       iTempTrend.setText("8");
+      Serial.print("\nTemp trend: ");
+      Serial.println("Rising");
       break;
     case T_FALLING:
       iTempTrend.setText("9");
+      Serial.print("\nTemp trend: ");
+      Serial.println("Falling");
       break;
     default:
       iTempTrend.setText(":");
+      Serial.print("\nTemp trend: ");
+      Serial.println("Steady");
       break;
     }
 
@@ -121,16 +137,22 @@ void redrawDisplay(bool force)
     snprintf_P(displayBuffer, countof(displayBuffer), PSTR("%02d"), getItegerFromFloat(internalSensorData.humidity));
     iHum.setText(displayBuffer);
 
-    switch (getHumidityTrend(humidityLast24H[95] - humidityLast24H[94]))
+    switch (getTrend(humidityLastHour, 0, 60))
     {
     case T_RISING:
       iHumTrend.setText("8");
+      Serial.print("\nHumidity trend: ");
+      Serial.println("Rising");
       break;
     case T_FALLING:
       iHumTrend.setText("9");
+      Serial.print("\nHumidity trend: ");
+      Serial.println("Falling");
       break;
     default:
       iHumTrend.setText(":");
+      Serial.print("\nHumidity trend: ");
+      Serial.println("Steady");
       break;
     }
 
@@ -144,81 +166,138 @@ void redrawDisplay(bool force)
 
     /* Outdoor */
 
-    oTempSign.setText(externalSensorData[sensorIndex].temperature < 0 ? "-" : " ");
+    oTempSign.setText(externalSensorData[currentOutdoorSensorId].temperature < 0 ? "-" : " ");
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
-    snprintf_P(displayBuffer, countof(displayBuffer), PSTR("%02d"), getItegerFromFloat(externalSensorData[sensorIndex].temperature));
+    snprintf_P(displayBuffer, countof(displayBuffer), PSTR("%02d"), getItegerFromFloat(externalSensorData[currentOutdoorSensorId].temperature));
     oTemp.setText(displayBuffer);
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
-    snprintf_P(displayBuffer, countof(displayBuffer), PSTR(".%d"), getFractionFromFloat(externalSensorData[sensorIndex].temperature));
+    snprintf_P(displayBuffer, countof(displayBuffer), PSTR(".%d"), getFractionFromFloat(externalSensorData[currentOutdoorSensorId].temperature));
     oTempFract.setText(displayBuffer);
 
-    switch (getTemperatureTrend(externalTemperatureLast24H[sensorIndex][95] - externalTemperatureLast24H[sensorIndex][94]))
+    switch (getTrend(externalTemperatureLastHour[currentOutdoorSensorId], 0, 60))
     {
     case T_RISING:
       oTempTrend.setText("8");
+      Serial.print("\nExternal Temp trend: ");
+      Serial.println("Rising");
       break;
     case T_FALLING:
       oTempTrend.setText("9");
+      Serial.print("\nExternal Temp trend: ");
+      Serial.println("Falling");
       break;
     default:
       oTempTrend.setText(":");
+      Serial.print("\nExternal Temp trend: ");
+      Serial.println("Steady");
       break;
     }
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
-    itoa(getItegerFromFloat(externalSensorData[sensorIndex].temperatureMin), displayBuffer, 10);
+    itoa(getItegerFromFloat(externalSensorData[currentOutdoorSensorId].temperatureMin), displayBuffer, 10);
     oTempMin.setText(displayBuffer);
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
-    itoa(getItegerFromFloat(externalSensorData[sensorIndex].temperatureMax), displayBuffer, 10);
+    itoa(getItegerFromFloat(externalSensorData[currentOutdoorSensorId].temperatureMax), displayBuffer, 10);
     oTempMax.setText(displayBuffer);
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
-    itoa(getItegerFromFloat(externalSensorData[sensorIndex].dewPoint), displayBuffer, 10);
+    itoa(getItegerFromFloat(externalSensorData[currentOutdoorSensorId].dewPoint), displayBuffer, 10);
     oDewPoint.setText(displayBuffer);
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
-    itoa(getItegerFromFloat(externalSensorData[sensorIndex].humIndex), displayBuffer, 10);
+    itoa(getItegerFromFloat(externalSensorData[currentOutdoorSensorId].humIndex), displayBuffer, 10);
     oHumIndex.setText(displayBuffer);
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
-    snprintf_P(displayBuffer, countof(displayBuffer), PSTR("%02d"), getItegerFromFloat(externalSensorData[sensorIndex].humidity));
+    snprintf_P(displayBuffer, countof(displayBuffer), PSTR("%02d"), getItegerFromFloat(externalSensorData[currentOutdoorSensorId].humidity));
     oHum.setText(displayBuffer);
 
-    switch (getHumidityTrend(externalHumidityLast24H[sensorIndex][95] - externalHumidityLast24H[sensorIndex][94]))
+    switch (getTrend(externalHumidityLastHour[currentOutdoorSensorId], 0, 60))
     {
     case T_RISING:
       oHumTrend.setText("8");
+      Serial.print("\nExternal Hum trend: ");
+      Serial.println("Rising");
       break;
     case T_FALLING:
       oHumTrend.setText("9");
+      Serial.print("\nExternal Hum trend: ");
+      Serial.println("Falling");
       break;
     default:
       oHumTrend.setText(":");
+      Serial.print("\nExternal Hum trend: ");
+      Serial.println("Steady");
       break;
     }
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
-    itoa(getItegerFromFloat(externalSensorData[sensorIndex].humidityMin), displayBuffer, 10);
+    itoa(getItegerFromFloat(externalSensorData[currentOutdoorSensorId].humidityMin), displayBuffer, 10);
     oHumMin.setText(displayBuffer);
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
-    itoa(getItegerFromFloat(externalSensorData[sensorIndex].humidityMax), displayBuffer, 10);
+    itoa(getItegerFromFloat(externalSensorData[currentOutdoorSensorId].humidityMax), displayBuffer, 10);
     oHumMax.setText(displayBuffer);
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
-    itoa(currentOutdoorSensorId, displayBuffer, 10);
+    itoa(currentOutdoorSensorId + 1, displayBuffer, 10);
     oSensIdx.setText(displayBuffer);
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
     itoa(getItegerFromFloat(internalSensorData.co2), displayBuffer, 10);
     co2.setText(displayBuffer);
+    co2.Set_font_color_pco(getCO2Color());
 
+    switch (getTrend(co2LastHour, 0, 3))
+    {
+    case T_RISING:
+      co2Trend.setText("8");
+      Serial.print("\nCO2 trend: ");
+      Serial.println("Rising");
+      break;
+    case T_FALLING:
+      co2Trend.setText("9");
+      Serial.print("\nCO2 trend: ");
+      Serial.println("Falling");
+      break;
+    default:
+      co2Trend.setText(":");
+      Serial.print("\nCO2 trend: ");
+      Serial.println("Steady");
+      break;
+    }
     memset(displayBuffer, 0, sizeof(displayBuffer));
     itoa(internalSensorData.pressureMmHg, displayBuffer, 10);
     pressure.setText(displayBuffer);
+
+    if (0 == pressureLast24H[21])
+    {
+      pressureTrend.setText(":");
+    }
+    else
+    {
+      switch (getTrend(pressureLast24H, 21, 3))
+      {
+      case T_RISING:
+        pressureTrend.setText("8");
+        Serial.print("\nPressure trend: ");
+        Serial.println("Rising");
+        break;
+      case T_FALLING:
+        pressureTrend.setText("9");
+        Serial.print("\nPressure trend: ");
+        Serial.println("Falling");
+        break;
+      default:
+        pressureTrend.setText(":");
+        Serial.print("\nPressure trend: ");
+        Serial.println("Steady");
+        break;
+      }
+    }
 
     /* Date and time */
 

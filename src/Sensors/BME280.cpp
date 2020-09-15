@@ -14,11 +14,20 @@ void initBME280()
         Serial.println("BME280 sensor connect failed");
     }
 
-    bme280.setFilter(2);
+    bme280.setFilter(2);    
+    bme280.setTempOverSample(2);
+    bme280.setPressureOverSample(2);
+    bme280.setHumidityOverSample(2);
+    bme280.setMode(MODE_FORCED);
 }
 
 void readBME280()
 {
+    while (bme280.isMeasuring())
+    {
+        delay(5);
+    }
+
     float temp = (bme280.readTempC() * 100) / 100;
     float humidity = (bme280.readFloatHumidity() * 100) / 100;
 

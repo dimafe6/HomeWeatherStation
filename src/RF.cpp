@@ -6,6 +6,8 @@ const uint64_t pipes[RF_SENSORS_COUNT] = {0xF0F0F0F0D2LL, 0xF0F0F0F0C3LL, 0xF0F0
 volatile bool hasExternalSensorData = false;
 unsigned long lastExternalTemperatureHistoryUpdateTime = EXTERNAL_TEMPERATURE_HISTORY_INTERVAL;
 unsigned long lastExternalHumidityHistoryUpdateTime = EXTERNAL_HUMIDITY_HISTORY_INTERVAL;
+unsigned long lastExternalTemperatureHistoryOneHourUpdateTime = EXTERNAL_TEMPERATURE_HISTORY_ONE_HOUR_INTERVAL;
+unsigned long lastExternalHumidityHistoryOneHourUpdateTime = EXTERNAL_HUMIDITY_HISTORY_ONE_HOUR_INTERVAL;
 
 void initRF()
 {
@@ -97,12 +99,26 @@ void readExternalSensorData()
         updateExternalTemperatureHistory();
       }
 
+      if (millis() - lastExternalTemperatureHistoryOneHourUpdateTime > EXTERNAL_TEMPERATURE_HISTORY_ONE_HOUR_INTERVAL)
+      {
+        lastExternalTemperatureHistoryOneHourUpdateTime = millis();
+
+        updateExternalTemperatureHistoryOneHour();
+      }
+
       // Update external humidity history
       if (millis() - lastExternalHumidityHistoryUpdateTime > EXTERNAL_HUMIDITY_HISTORY_INTERVAL)
       {
         lastExternalHumidityHistoryUpdateTime = millis();
 
         updateExternalHumidityHistory();
+      }
+
+      if (millis() - lastExternalHumidityHistoryOneHourUpdateTime > EXTERNAL_HUMIDITY_HISTORY_ONE_HOUR_INTERVAL)
+      {
+        lastExternalHumidityHistoryOneHourUpdateTime = millis();
+
+        updateExternalHumidityHistoryOneHour();
       }
 
       Serial.print("Outdoor sensor ");
@@ -140,6 +156,19 @@ void updateExternalTemperatureHistory()
   }
 }
 
+void updateExternalTemperatureHistoryOneHour()
+{
+  for (int n = 0; n < RF_SENSORS_COUNT; n++)
+  {
+    for (int i = 0; i < 59; i++)
+    {
+      externalTemperatureLastHour[n][i] = externalTemperatureLastHour[n][i + 1];
+    }
+
+    externalTemperatureLastHour[n][59] = externalSensorData[n].temperature;
+  }
+}
+
 void updateExternalHumidityHistory()
 {
   for (int n = 0; n < RF_SENSORS_COUNT; n++)
@@ -150,5 +179,18 @@ void updateExternalHumidityHistory()
     }
 
     externalHumidityLast24H[n][95] = externalSensorData[n].humidity;
+  }
+}
+
+void updateExternalHumidityHistoryOneHour()
+{
+  for (int n = 0; n < RF_SENSORS_COUNT; n++)
+  {
+    for (int i = 0; i < 59; i++)
+    {
+      externalHumidityLastHour[n][i] = externalHumidityLastHour[n][i + 1];
+    }
+
+    externalHumidityLastHour[n][59] = externalSensorData[n].humidity;
   }
 }

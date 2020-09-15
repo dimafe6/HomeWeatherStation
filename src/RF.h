@@ -12,5 +12,7 @@ void initRF();
 void readExternalSensorData();
 void updateExternalHumidityHistory();
 void updateExternalTemperatureHistory();
+void updateExternalHumidityHistoryOneHour();
+void updateExternalTemperatureHistoryOneHour();
 
 #endif
