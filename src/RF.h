@@ -14,5 +14,6 @@ void updateExternalHumidityHistory();
 void updateExternalTemperatureHistory();
 void updateExternalHumidityHistoryOneHour();
 void updateExternalTemperatureHistoryOneHour();
+void checkSignal();
 
 #endif

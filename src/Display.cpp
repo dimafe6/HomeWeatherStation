@@ -31,11 +31,13 @@ NexText oHumMin = NexText(0, 48, "oHumMin");
 NexText oHumMax = NexText(0, 46, "oHumMax");
 NexWaveform oChart = NexWaveform(0, 9, "oChart");
 
-NexHotspot oHot = NexHotspot(0, 51, "oHot");
+NexHotspot oHot = NexHotspot(0, 60, "oHot");
 NexText oSensIdx = NexText(0, 15, "oSensIdx");
+NexText oSignal = NexText(0, 14, "oSignal");
+NexText oBatt = NexText(0, 59, "oBatt");
 NexPicture forecastImg = NexPicture(0, 19, "forecastImg");
 NexButton menuBtn = NexButton(0, 54, "menuBtn");
-NexText co2 = NexText(0, 14, "co2");
+NexText co2 = NexText(0, 11, "co2");
 NexText co2Trend = NexText(0, 58, "co2Trend");
 NexText pressure = NexText(0, 15, "pressure");
 NexText pressureTrend = NexText(0, 59, "pressureTrend");
@@ -58,7 +60,6 @@ void initDisplay()
 
 void oHotPopCallback(void *ptr)
 {
-  prevOutdoorSensorId = currentOutdoorSensorId;
   currentOutdoorSensorId++;
   if (currentOutdoorSensorId >= RF_SENSORS_COUNT)
   {
@@ -68,16 +69,21 @@ void oHotPopCallback(void *ptr)
   memset(displayBuffer, 0, sizeof(displayBuffer));
   itoa(currentOutdoorSensorId, displayBuffer, 10);
 
-  lastDisplayUpdateTime = UPDATE_DISPLAY_INTERVAL;
+  shouldRedrawDisplay = true;
 }
 
 void redrawDisplay(bool force)
 {
-  force = force || prevOutdoorSensorId != currentOutdoorSensorId;
+  force = force || shouldRedrawDisplay;
 
   if ((millis() - lastDisplayUpdateTime > UPDATE_DISPLAY_INTERVAL) || force)
   {
     lastDisplayUpdateTime = millis();
+
+    if (shouldRedrawDisplay)
+    {
+      shouldRedrawDisplay = false;
+    }
 
     char buff[10] = {0};
     char output[200];
@@ -167,6 +173,53 @@ void redrawDisplay(bool force)
     /* Outdoor */
 
     oTempSign.setText(externalSensorData[currentOutdoorSensorId].temperature < 0 ? "-" : " ");
+
+    switch (externalSensorData[currentOutdoorSensorId].signal)
+    {
+    case 1:
+      oSignal.setText("5"); // Full signal
+      oSignal.Set_font_color_pco(0);
+      break;
+    case 0:
+      oSignal.setText("3"); // Low signal
+      oSignal.Set_font_color_pco(0);
+      break;
+    default:
+      oSignal.setText("0"); // No signal
+      oSignal.Set_font_color_pco(57376); //Red
+      break;
+    }
+
+    if (externalSensorData[currentOutdoorSensorId].battery == 255)
+    {
+      oBatt.setText("0"); // No battery
+      oBatt.Set_font_color_pco(57376);
+    }
+    else if (externalSensorData[currentOutdoorSensorId].battery >= 0 && externalSensorData[currentOutdoorSensorId].battery <= 5)
+    {
+      oBatt.setText("1"); // Critical battery
+      oBatt.Set_font_color_pco(57376); // Red
+    }
+    else if (externalSensorData[currentOutdoorSensorId].battery >= 6 && externalSensorData[currentOutdoorSensorId].battery <= 25)
+    {
+      oBatt.setText("2"); // Low battery
+      oBatt.Set_font_color_pco(0);
+    }
+    else if (externalSensorData[currentOutdoorSensorId].battery >= 26 && externalSensorData[currentOutdoorSensorId].battery <= 50)
+    {
+      oBatt.setText("3"); // Half battery
+      oBatt.Set_font_color_pco(0);
+    }
+    else if (externalSensorData[currentOutdoorSensorId].battery >= 51 && externalSensorData[currentOutdoorSensorId].battery <= 75)
+    {
+      oBatt.setText("4"); // Good battery
+      oBatt.Set_font_color_pco(0);
+    }
+    else if (externalSensorData[currentOutdoorSensorId].battery >= 76)
+    {
+      oBatt.setText("5"); // Full battery
+      oBatt.Set_font_color_pco(0);
+    }
 
     memset(displayBuffer, 0, sizeof(displayBuffer));
     snprintf_P(displayBuffer, countof(displayBuffer), PSTR("%02d"), getItegerFromFloat(externalSensorData[currentOutdoorSensorId].temperature));

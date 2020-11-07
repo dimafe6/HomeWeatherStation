@@ -92,7 +92,7 @@ String getZambrettiExplanation(char c)
 
 char getZambrettiChar(float P, Trend trend)
 {
-    byte M = month();
+    uint8_t M = month();
     char result = '0';
 
     // FALLING
@@ -237,7 +237,7 @@ char getZambrettiChar(float P, Trend trend)
     return result;
 }
 
-byte getForecastImageNumberFromZambrettiChar(char zambrettiChar)
+uint8_t getForecastImageNumberFromZambrettiChar(char zambrettiChar)
 {
     int M = month();
 

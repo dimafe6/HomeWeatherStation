@@ -15,6 +15,6 @@ void updateCO2History();
 void updateTemperatureHistoryOneHour();
 void updateHumidityHistoryOneHour();
 void updateCO2HistoryOneHour();
-byte getForecastImageNumber();
+uint8_t getForecastImageNumber();
 
 #endif

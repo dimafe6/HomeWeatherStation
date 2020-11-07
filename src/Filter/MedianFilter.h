@@ -10,5 +10,5 @@ public:
 
 private:
 	float buffer[3];
-	byte counter = 0;
+	uint8_t counter = 0;
 };

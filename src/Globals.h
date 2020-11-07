@@ -27,13 +27,13 @@ extern float co2Last24H[96];
 extern float co2LastHour[60];
 
 extern bool shouldReboot;
+extern bool shouldRedrawDisplay;
 
 extern Median externalTemperatureFilter;
 extern Median externalHumidityFilter;
 extern Median internalTemperatureFilter;
 extern Median internalHumidityFilter;
 
-extern byte currentOutdoorSensorId;
-extern byte prevOutdoorSensorId;
+extern uint8_t currentOutdoorSensorId;
 
 #endif

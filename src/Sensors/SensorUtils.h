@@ -26,11 +26,12 @@ struct __attribute__((__packed__)) ExternalSensor
 {
   int16_t temperature;
   int16_t humidity;
+  uint8_t battery;
 };
 
 struct ExternalSensorData
 {
-  byte sensorId;
+  uint8_t sensorId = NULL;
   float temperature;
   float temperatureMin = NULL;
   float temperatureMax = NULL;
@@ -40,6 +41,9 @@ struct ExternalSensorData
   float dewPoint;
   float humIndex;
   uint32_t measurementTime = 0;
+  uint16_t sleepTime = 0;
+  uint8_t battery = 255;
+  uint8_t signal = 255;
 };
 
 double dewPointC(double celsius, double humidity);
@@ -50,6 +54,6 @@ String getZambrettiExplanation(char c);
 
 char getZambrettiChar(float P, Trend trend);
 
-byte getForecastImageNumberFromZambrettiChar(char zambrettiChar);
+uint8_t getForecastImageNumberFromZambrettiChar(char zambrettiChar);
 
 #endif

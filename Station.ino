@@ -34,6 +34,8 @@ void loop() {
   readExternalSensorData();
   readAllSensors(false);
 
+  checkSignal();
+
   nexLoop(nextionListen);
   redrawDisplay(false);
 }

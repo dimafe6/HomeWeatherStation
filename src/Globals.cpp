@@ -20,11 +20,11 @@ float co2Last24H[96] = {0};
 float co2LastHour[60] = {0};
 
 bool shouldReboot = false;
+bool shouldRedrawDisplay = false;
 
 Median externalTemperatureFilter;
 Median externalHumidityFilter;
 Median internalTemperatureFilter;
 Median internalHumidityFilter;
 
-byte currentOutdoorSensorId = 0;
-byte prevOutdoorSensorId = 0;
+uint8_t currentOutdoorSensorId = 0;

@@ -73,7 +73,7 @@ void readAllSensors(bool force)
 
       updateCO2HistoryOneHour();
     }
-
+/*
     Serial.println();
     Serial.println("Indoor sensors:");
     Serial.print("Humidity:");
@@ -106,7 +106,7 @@ void readAllSensors(bool force)
 
     Serial.print("Light:");
     Serial.print(internalSensorData.lux);
-    Serial.println();
+    Serial.println();*/
   }
 }
 
@@ -177,7 +177,7 @@ void updateCO2HistoryOneHour()
   co2LastHour[59] = (float)internalSensorData.co2;
 }
 
-byte getForecastImageNumber()
+uint8_t getForecastImageNumber()
 {
   // If no pressure for last 3h
   if (0 == pressureLast24H[21])
