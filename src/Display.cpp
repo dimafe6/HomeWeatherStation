@@ -49,6 +49,8 @@ NexText dateText = NexText(0, 53, "date");
 NexText hourText = NexText(0, 52, "hour");
 NexText minuteText = NexText(0, 56, "minute");
 
+NexText wifiSignal = NexText(0, 61, "wifiSignal");
+
 NexTimer timeDotsTimer = NexTimer(0, 57, "timeDotsTimer");
 
 void initDisplay()
@@ -170,6 +172,31 @@ void redrawDisplay(bool force)
     itoa(getItegerFromFloat(internalSensorData.humidityMax), displayBuffer, 10);
     iHumMax.setText(displayBuffer);
 
+    /* WIFI */
+    if (WiFi.status() != WL_CONNECTED)
+    {
+      wifiSignal.setText("0");
+      wifiSignal.Set_font_color_pco(57376); //Red
+    }
+    else
+    {
+      int8_t rssi = WiFi.RSSI();
+      if (rssi <= -85)
+      {
+        wifiSignal.setText("1");
+        wifiSignal.Set_font_color_pco(65535); // White
+      }
+      else if (rssi > -85 && rssi <= -67)
+      {
+        wifiSignal.setText("2");
+        wifiSignal.Set_font_color_pco(65535); // White
+      }
+      else if (rssi > -67)
+      {
+        wifiSignal.setText("3");
+        wifiSignal.Set_font_color_pco(65535); // White
+      }
+    }
     /* Outdoor */
 
     oTempSign.setText(externalSensorData[currentOutdoorSensorId].temperature < 0 ? "-" : " ");
@@ -185,7 +212,7 @@ void redrawDisplay(bool force)
       oSignal.Set_font_color_pco(0);
       break;
     default:
-      oSignal.setText("0"); // No signal
+      oSignal.setText("0");              // No signal
       oSignal.Set_font_color_pco(57376); //Red
       break;
     }
@@ -197,7 +224,7 @@ void redrawDisplay(bool force)
     }
     else if (externalSensorData[currentOutdoorSensorId].battery >= 0 && externalSensorData[currentOutdoorSensorId].battery <= 5)
     {
-      oBatt.setText("1"); // Critical battery
+      oBatt.setText("1");              // Critical battery
       oBatt.Set_font_color_pco(57376); // Red
     }
     else if (externalSensorData[currentOutdoorSensorId].battery >= 6 && externalSensorData[currentOutdoorSensorId].battery <= 25)

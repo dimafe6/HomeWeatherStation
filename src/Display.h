@@ -6,6 +6,7 @@
 #include "Globals.h"
 #include "Utils.h"
 #include "Time.h"
+#include "WiFi.h"
 #include "Sensors/Sensors.h"
 #include "./Nextion/Nextion.h"
 

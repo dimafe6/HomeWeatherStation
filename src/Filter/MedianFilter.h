@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __MEDIAN_FILTER_H__
+#define __MEDIAN_FILTER_H__
 
 #include <Arduino.h>
 
@@ -12,3 +13,4 @@ private:
 	float buffer[3];
 	uint8_t counter = 0;
 };
+#endif
