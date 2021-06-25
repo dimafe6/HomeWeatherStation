@@ -38,6 +38,8 @@ void WiFiEvent(WiFiEvent_t event)
             break;
         case SYSTEM_EVENT_STA_DISCONNECTED:
             ESP_LOGI(TAG, "Disconnected from WiFi access point");
+            timeClient.end();
+
             if (WiFi.getAutoReconnect())
             {
                 WiFi.reconnect();
@@ -47,7 +49,7 @@ void WiFiEvent(WiFiEvent_t event)
             ESP_LOGI(TAG, "Authentication mode of access point has changed");
             break;
         case SYSTEM_EVENT_STA_GOT_IP:
-            syncTimeFromNTP();
+            timeClient.begin();
             break;
         case SYSTEM_EVENT_STA_LOST_IP:
             ESP_LOGI(TAG, "Lost IP address and IP address is reset to 0");

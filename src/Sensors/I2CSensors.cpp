@@ -83,6 +83,8 @@ void i2cSensorsTask(void *pvParameters)
                     internalSensorData.temperatureMax = internalSensorData.temperature;
                     internalSensorData.humidityMin = internalSensorData.humidity;
                     internalSensorData.humidityMax = internalSensorData.humidity;
+
+                    internalSensorData.initialized = true;
                 }
 
                 internalSensorData.pressure = bme280.readFloatPressure() / 100.0F; //hPa

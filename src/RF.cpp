@@ -95,6 +95,8 @@ void nrf24Task(void *pvParameters)
                         externalSensorData[pipeNum - 1].humidityMax = externalSensorData[pipeNum - 1].humidity;
                         externalSensorData[pipeNum - 1].temperatureMin = externalSensorData[pipeNum - 1].temperature;
                         externalSensorData[pipeNum - 1].temperatureMax = externalSensorData[pipeNum - 1].temperature;
+
+                        externalSensorData[pipeNum - 1].initialized = true;
                     }
 
                     externalSensorData[pipeNum - 1].dewPoint = dewPointC(
@@ -105,8 +107,6 @@ void nrf24Task(void *pvParameters)
                             externalSensorData[pipeNum - 1].temperature,
                             externalSensorData[pipeNum - 1].dewPoint
                     );
-
-                    externalSensorData[pipeNum - 1].initialized = true;
 
                     ESP_LOGI(
                             TAG,
@@ -154,19 +154,24 @@ void nrf24Task(void *pvParameters)
                     }
 
                     // Send to MQTT
-                    char buf[200] = {0};
-                    char topic_name[12] = {0};
+                    if (WiFi.status() == WL_CONNECTED && mqttClient.isMqttConnected())
+                    {
+                        char buf[200] = {0};
+                        char topic_name[12] = {0};
 
-                    sprintf(topic_name, "outdoor/%i", pipeNum);
-                    sprintf(
-                            buf,
-                            R"({"temp":%2.2f,"hum":%2.2f,"dp":%2.2f,"hi":%2.2f,"bat":%i})",
-                            externalSensorData[pipeNum - 1].temperature,
-                            externalSensorData[pipeNum - 1].humidity,
-                            externalSensorData[pipeNum - 1].dewPoint,
-                            externalSensorData[pipeNum - 1].humIndex,
-                            externalSensorData[pipeNum - 1].battery);
-                    mqttPubSensor(topic_name, buf);
+                        snprintf(topic_name, 12, "outdoor/%u", pipeNum);
+                        snprintf(
+                                buf,
+                                200,
+                                R"({"temp":%2.2f,"hum":%2.2f,"dp":%2.2f,"hi":%2.2f,"bat":%u})",
+                                externalSensorData[pipeNum - 1].temperature,
+                                externalSensorData[pipeNum - 1].humidity,
+                                externalSensorData[pipeNum - 1].dewPoint,
+                                externalSensorData[pipeNum - 1].humIndex,
+                                externalSensorData[pipeNum - 1].battery
+                        );
+                        mqttPubSensor(topic_name, buf);
+                    }
                 } else
                 {
                     ESP_LOGI(

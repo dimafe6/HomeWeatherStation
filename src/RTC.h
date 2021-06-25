@@ -11,6 +11,8 @@
 #include <WiFiUdp.h>
 #include <Timezone.h>
 
+extern NTPClient timeClient;
+
 void initRtc();
 void printDateTime(const RtcDateTime &dt);
 void syncTimeFromNTP();

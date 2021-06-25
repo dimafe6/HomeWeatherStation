@@ -22,17 +22,20 @@ static void mqttDiscovery(const char *component,
                           const char *payload_off = "",
                           const char *payload_on = "")
 {
-    StaticJsonDocument<2048> doc;
-    char discovery[2048];
+    StaticJsonDocument<1024> doc;
+    char discovery[1024];
 
-    char unique_id[strlen(mac_address) + strlen(component_config_key) + 6];
-    sprintf(unique_id, "hws-%s-%s", mac_address, component_config_key);
+    uint16_t unique_id_size = strlen(mac_address) + strlen(component_config_key) + 9;
+    char unique_id[unique_id_size];
+    snprintf(unique_id, unique_id_size, "hws-%s-%s", mac_address, component_config_key);
 
-    char topic[strlen(component) + strlen(unique_id) + 22];
-    sprintf(topic, "homeassistant/%s/%s/config", component, unique_id);
+    uint16_t topic_size = strlen(component) + strlen(unique_id) + 25;
+    char topic[topic_size];
+    snprintf(topic, topic_size, "homeassistant/%s/%s/config", component, unique_id);
 
-    char stopic[strlen(mac_address) + strlen(state_topic) + 6];
-    sprintf(stopic, "hws/%s/%s", mac_address, state_topic);
+    uint16_t stopic_size = strlen(mac_address) + strlen(state_topic) + 8;
+    char stopic[stopic_size];
+    snprintf(stopic, stopic_size, "hws/%s/%s", mac_address, state_topic);
 
     if (strlen(device_class))
     {
@@ -95,57 +98,57 @@ static void mqttDiscovery(const char *component,
 
 static void printResetReason()
 {
-    char topic[20];
-    sprintf(topic, "hws/%s/reset_reason", mac_address);
+    char topic[100];
+    snprintf(topic, 100, "hws/%s/reset_reason", mac_address);
 
     RESET_REASON reason = rtc_get_reset_reason(0);
 
     switch (reason)
     {
         case 1 :
-            mqttPub(topic, "Vbat power on reset");
+            mqttPub(topic, "Vbat power on reset", true);
             break;
         case 3 :
-            mqttPub(topic, "Software reset digital core");
+            mqttPub(topic, "Software reset digital core", true);
             break;
         case 4 :
-            mqttPub(topic, "Legacy watch dog reset digital core");
+            mqttPub(topic, "Legacy watch dog reset digital core", true);
             break;
         case 5 :
-            mqttPub(topic, "Deep Sleep reset digital core");
+            mqttPub(topic, "Deep Sleep reset digital core", true);
             break;
         case 6 :
-            mqttPub(topic, "Reset by SLC module, reset digital core");
+            mqttPub(topic, "Reset by SLC module, reset digital core", true);
             break;
         case 7 :
-            mqttPub(topic, "Timer Group0 Watch dog reset digital core");
+            mqttPub(topic, "Timer Group0 Watch dog reset digital core", true);
             break;
         case 8 :
-            mqttPub(topic, "Timer Group1 Watch dog reset digital core");
+            mqttPub(topic, "Timer Group1 Watch dog reset digital core", true);
             break;
         case 9 :
-            mqttPub(topic, "RTC Watch dog Reset digital core");
+            mqttPub(topic, "RTC Watch dog Reset digital core", true);
             break;
         case 10 :
-            mqttPub(topic, "Instruction tested to reset CPU");
+            mqttPub(topic, "Instruction tested to reset CPU", true);
             break;
         case 11 :
-            mqttPub(topic, "Time Group reset CPU");
+            mqttPub(topic, "Time Group reset CPU", true);
             break;
         case 12 :
-            mqttPub(topic, "Software reset CPU");
+            mqttPub(topic, "Software reset CPU", true);
             break;
         case 13 :
-            mqttPub(topic, "RTC Watch dog Reset CPU");
+            mqttPub(topic, "RTC Watch dog Reset CPU", true);
             break;
         case 14 :
-            mqttPub(topic, "Reseted by PRO CPU");
+            mqttPub(topic, "Reseted by PRO CPU", true);
             break;
         case 15 :
-            mqttPub(topic, "Reset when the vdd voltage is not stable");
+            mqttPub(topic, "Reset when the vdd voltage is not stable", true);
             break;
         case 16 :
-            mqttPub(topic, "RTC Watch dog reset digital core and rtc module");
+            mqttPub(topic, "RTC Watch dog reset digital core and rtc module", true);
             break;
     }
 }
@@ -157,15 +160,17 @@ void mqtt_send_task(void *pvParameters)
         if (mqttClient.isMqttConnected())
         {
             char buf[100] = {0};
-            sprintf(
+            snprintf(
                     buf,
+                    100,
                     R"({"temp":%2.2f,"hum":%2.2f,"dp":%2.2f,"hi":%2.2f,"press":%i,"co2":%i})",
                     internalSensorData.temperature,
                     internalSensorData.humidity,
                     internalSensorData.dewPoint,
                     internalSensorData.humIndex,
                     internalSensorData.pressureMmHg,
-                    internalSensorData.co2);
+                    internalSensorData.co2
+            );
 
             mqttPubSensor("indoor", buf);
             mqttPub(lwt_topic, "online");
@@ -181,8 +186,8 @@ void mqtt_uptime_task(void *pvParameters)
     {
         if (mqttClient.isMqttConnected())
         {
-            char uptime[20];
-            sprintf(uptime, "%i", esp_timer_get_time() / 1000000);
+            char uptime[25];
+            sprintf(uptime, "%i\0", esp_timer_get_time() / 1000000);
             mqttPubSensor("uptime", uptime);
 
             char sysInfo[400];
@@ -197,12 +202,13 @@ void mqtt_uptime_task(void *pvParameters)
             char netmask[18];
             char gw[18];
 
-            sprintf(ip, IPSTR, IP2STR(&ipinfo.ip));
-            sprintf(netmask, IPSTR, IP2STR(&ipinfo.netmask));
-            sprintf(gw, IPSTR, IP2STR(&ipinfo.gw));
+            snprintf(ip, 18, IPSTR, IP2STR(&ipinfo.ip));
+            snprintf(netmask, 18, IPSTR, IP2STR(&ipinfo.netmask));
+            snprintf(gw, 18, IPSTR, IP2STR(&ipinfo.gw));
 
-            sprintf(
+            snprintf(
                     sysInfo,
+                    400,
                     R"({"ssid":"%s","rssi":%i,"ip":"%s","netmask":"%s","gw":"%s","free_heap":%i,"free_heap_min":%i,"mac_address":"%s"})",
                     wifidata.ssid,
                     wifidata.rssi,
@@ -262,20 +268,15 @@ bool mqttPub(const char *topic, const char *data, bool retain)
 
 void mqttPubSensor(const char *topic, const char *data)
 {
-    char topic_name[strlen(topic) + strlen(mac_address) + 6];
-    sprintf(topic_name, "hws/%s/%s", mac_address, topic);
+    uint16_t topic_name_size = strlen(topic) + strlen(mac_address) + 8;
+    char topic_name[topic_name_size];
+    snprintf(topic_name, topic_name_size, "hws/%s/%s", mac_address, topic);
 
     mqttPub(topic_name, data);
 }
 
-void onConnectionEstablished()
+void discoveryAll()
 {
-    ESP_LOGI(TAG, "MQTT connected!");
-
-    mqttClient.subscribe("hws/weather", [](const String &topic, const String &payload) {
-        strcpy(weather_condition, payload.c_str());
-    });
-
     //MQTT discovery
     mqttDiscovery(
             "sensor",
@@ -459,7 +460,7 @@ void onConnectionEstablished()
             "",
             "HWS Sys info free heap",
             "sys_info",
-            "",
+            "bytes",
             "{{value_json.free_heap}}",
             lwt_topic,
             0
@@ -471,7 +472,7 @@ void onConnectionEstablished()
             "",
             "HWS Sys info free heap min",
             "sys_info",
-            "",
+            "bytes",
             "{{value_json.free_heap_min}}",
             lwt_topic,
             0
@@ -492,38 +493,58 @@ void onConnectionEstablished()
     for (uint8_t i = 1; i <= RF_SENSORS_COUNT; i++)
     {
         char topic[10];
-        sprintf(topic, "outdoor/%i", i);
+        snprintf(topic, 10, "outdoor/%u", i);
 
-        char config_key[15];
-        sprintf(config_key, "outdoor-%i-temp", i);
+        char config_key[16];
+        snprintf(config_key, 16, "outdoor-%u-temp", i);
         char s_name[50];
-        sprintf(s_name, "HWS Outdoor %i temperature", i);
+        snprintf(s_name, 50, "HWS Outdoor %u temperature", i);
         mqttDiscovery("sensor", config_key, "temperature", s_name, topic, "°C", "{{value_json.temp}}", lwt_topic);
 
         config_key[0] = '\0';
         s_name[0] = '\0';
-        sprintf(config_key, "outdoor-%i-hum", i);
-        sprintf(s_name, "HWS Outdoor %i humidity", i);
+        snprintf(config_key, 16, "outdoor-%u-hum", i);
+        snprintf(s_name, 50, "HWS Outdoor %u humidity", i);
         mqttDiscovery("sensor", config_key, "humidity", s_name, topic, "%", "{{value_json.hum}}", lwt_topic);
 
         config_key[0] = '\0';
         s_name[0] = '\0';
-        sprintf(config_key, "outdoor-%i-dp", i);
-        sprintf(s_name, "HWS Outdoor %i dew point", i);
+        snprintf(config_key, 16, "outdoor-%u-dp", i);
+        snprintf(s_name, 50, "HWS Outdoor %u dew point", i);
         mqttDiscovery("sensor", config_key, "temperature", s_name, topic, "°C", "{{value_json.dp}}", lwt_topic);
 
         config_key[0] = '\0';
         s_name[0] = '\0';
-        sprintf(config_key, "outdoor-%i-hi", i);
-        sprintf(s_name, "HWS Outdoor %i heat index", i);
+        snprintf(config_key, 16, "outdoor-%u-hi", i);
+        snprintf(s_name, 50, "HWS Outdoor %u heat index", i);
         mqttDiscovery("sensor", config_key, "temperature", s_name, topic, "°C", "{{value_json.hi}}", lwt_topic);
 
         config_key[0] = '\0';
         s_name[0] = '\0';
-        sprintf(config_key, "outdoor-%i-bat", i);
-        sprintf(s_name, "HWS Outdoor %i battery", i);
+        snprintf(config_key, 16, "outdoor-%u-bat", i);
+        snprintf(s_name, 50, "HWS Outdoor %u battery", i);
         mqttDiscovery("sensor", config_key, "battery", s_name, topic, "%", "{{value_json.bat}}", lwt_topic);
     }
+}
+
+void onConnectionEstablished()
+{
+    ESP_LOGI(TAG, "MQTT connected!");
+
+    mqttClient.subscribe("hws/weather", [](const String &topic, const String &payload) {
+        strncpy(weather_condition, payload.c_str(), payload.length());
+    });
+
+    mqttClient.subscribe("homeassistant/status", [](const String &topic, const String &payload) {
+        ESP_LOGI(TAG, "Home Assistant now is %s", payload.c_str());
+
+        if (payload.equals("online"))
+        {
+            discoveryAll();
+        }
+    });
+
+    discoveryAll();
 
     printResetReason();
 }

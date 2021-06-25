@@ -10,6 +10,8 @@ TimeChangeRule myDST = {"EEST", Last, Sun, Mar, 3, 180};
 TimeChangeRule mySTD = {"EET", Last, Sun, Oct, 4, 120};
 Timezone uaTZ(myDST, mySTD);
 
+unsigned long lastNtpSyncTime = NTP_SYNC_TIME_INTERVAL;
+
 void initRtc()
 {
     pinMode(RF_SCLK, INPUT_PULLUP);
@@ -49,17 +51,19 @@ void printDateTime(const RtcDateTime &dt)
 
 void syncTimeFromNTP()
 {
-    ESP_LOGI(TAG, "Sync time from NTP");
+    if (millis() - lastNtpSyncTime > NTP_SYNC_TIME_INTERVAL)
+    {
+        lastNtpSyncTime = millis();
 
-    timeClient.begin();
-    timeClient.forceUpdate();
-    timeClient.end();
+        ESP_LOGI(TAG, "Sync time from NTP");
 
-    setTime(uaTZ.toLocal(timeClient.getEpochTime()));
-    Rtc.SetDateTime(RtcDateTime(year(), month(), day(), hour(), minute(), second()));
+        setTime(uaTZ.toLocal(timeClient.getEpochTime()));
+        Rtc.SetDateTime(RtcDateTime(year(), month(), day(), hour(), minute(), second()));
 
-    ESP_LOGI(TAG, "Time from NTP:");
-    printDateTime(Rtc.GetDateTime());
+        ESP_LOGI(TAG, "Time from NTP:");
+
+        printDateTime(Rtc.GetDateTime());
+    }
 }
 
 time_t rtcEpoch32Time()

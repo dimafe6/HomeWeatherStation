@@ -24,9 +24,19 @@ void setup()
 
     uint8_t mac_bytes[6];
     esp_read_mac(mac_bytes, ESP_MAC_WIFI_STA);
-    sprintf(mac_address, "%02x-%02x-%02x-%02x-%02x-%02x", mac_bytes[0], mac_bytes[1], mac_bytes[2], mac_bytes[3], mac_bytes[4], mac_bytes[5]);
+    snprintf(
+            mac_address,
+            18,
+            "%02x-%02x-%02x-%02x-%02x-%02x",
+            mac_bytes[0],
+            mac_bytes[1],
+            mac_bytes[2],
+            mac_bytes[3],
+            mac_bytes[4],
+            mac_bytes[5]
+    );
 
-    sprintf(lwt_topic, "hws/%s/lwt", mac_address);
+    snprintf(lwt_topic, 28, "hws/%s/lwt", mac_address);
 
     mqttClient.enableLastWillMessage(lwt_topic, "offline");
     mqttClient.setMaxPacketSize(2048);
@@ -45,4 +55,11 @@ void loop()
     redrawDisplay();
     nexLoop(nextionListen);
     mqttClient.loop();
+
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        if(timeClient.update()) {
+            syncTimeFromNTP();
+        }
+    }
 }

@@ -3,8 +3,9 @@
 #include "esp_wifi.h"
 
 #define AP_PER_PAGE 6
+#define DISPLAY_BUFFER_SIZE 100
 
-char displayBuffer[100] = {0};
+char displayBuffer[DISPLAY_BUFFER_SIZE] = {0};
 unsigned long lastDisplayUpdateTime = 0;
 uint16_t ap_current_page = 1;
 uint8_t ap_max_pages = 4;
@@ -120,7 +121,7 @@ static uint32_t getHumindexColor(int humindex)
 static void printCurrentOutdoorSensor()
 {
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%i", currentOutdoorSensorId + 1);
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%u", currentOutdoorSensorId + 1);
     oSensIdx.setText(displayBuffer);
 
     switch (externalSensorData[currentOutdoorSensorId].signal)
@@ -163,11 +164,21 @@ static void printCurrentOutdoorSensor()
     oTempSign.setText(externalSensorData[currentOutdoorSensorId].temperature < 0 ? "-" : " ");
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", getIntegerFromFloat(externalSensorData[currentOutdoorSensorId].temperature));
+    snprintf(
+            displayBuffer,
+            DISPLAY_BUFFER_SIZE,
+            "%02d",
+            getIntegerFromFloat(externalSensorData[currentOutdoorSensorId].temperature)
+    );
     oTemp.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, ".%d", getFractionFromFloat(externalSensorData[currentOutdoorSensorId].temperature));
+    snprintf(
+            displayBuffer,
+            DISPLAY_BUFFER_SIZE,
+            ".%d",
+            getFractionFromFloat(externalSensorData[currentOutdoorSensorId].temperature)
+    );
     oTempFract.setText(displayBuffer);
 
     switch (getTrend(externalTemperatureLastHour[currentOutdoorSensorId], 0, 60))
@@ -184,24 +195,39 @@ static void printCurrentOutdoorSensor()
     }
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", (int) externalSensorData[currentOutdoorSensorId].temperatureMin);
+    snprintf(
+            displayBuffer,
+            DISPLAY_BUFFER_SIZE,
+            "%02d",
+            (int) externalSensorData[currentOutdoorSensorId].temperatureMin
+    );
     oTempMin.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", (int) externalSensorData[currentOutdoorSensorId].temperatureMax);
+    snprintf(
+            displayBuffer,
+            DISPLAY_BUFFER_SIZE,
+            "%02d",
+            (int) externalSensorData[currentOutdoorSensorId].temperatureMax
+    );
     oTempMax.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", (int) externalSensorData[currentOutdoorSensorId].dewPoint);
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) externalSensorData[currentOutdoorSensorId].dewPoint);
     oDewPoint.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", (int) externalSensorData[currentOutdoorSensorId].humIndex);
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) externalSensorData[currentOutdoorSensorId].humIndex);
     oHumIndex.setText(displayBuffer);
     oHumIndex.setFont(getHumindexColor((int) externalSensorData[currentOutdoorSensorId].humIndex));
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", getIntegerFromFloat(externalSensorData[currentOutdoorSensorId].humidity));
+    snprintf(
+            displayBuffer,
+            DISPLAY_BUFFER_SIZE,
+            "%02d",
+            getIntegerFromFloat(externalSensorData[currentOutdoorSensorId].humidity)
+    );
     oHum.setText(displayBuffer);
 
     switch (getTrend(externalHumidityLastHour[currentOutdoorSensorId], 0, 60))
@@ -218,26 +244,36 @@ static void printCurrentOutdoorSensor()
     }
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", getIntegerFromFloat(externalSensorData[currentOutdoorSensorId].humidityMin));
+    snprintf(
+            displayBuffer,
+            DISPLAY_BUFFER_SIZE,
+            "%02d",
+            getIntegerFromFloat(externalSensorData[currentOutdoorSensorId].humidityMin)
+    );
     oHumMin.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", getIntegerFromFloat(externalSensorData[currentOutdoorSensorId].humidityMax));
+    snprintf(
+            displayBuffer,
+            DISPLAY_BUFFER_SIZE,
+            "%02d",
+            getIntegerFromFloat(externalSensorData[currentOutdoorSensorId].humidityMax)
+    );
     oHumMax.setText(displayBuffer);
 }
 
 static void printTime()
 {
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", hour());
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", hour());
     hourText.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", minute());
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", minute());
     minuteText.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02u.%02u.%02u", day(), month(), year() - 2000);
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d.%02d.%02d", day(), month(), year() - 2000);
     dateText.setText(displayBuffer);
 }
 
@@ -246,11 +282,11 @@ static void printIndoorSensor()
     iTempSign.setText(internalSensorData.temperature < 0 ? "-" : " ");
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", getIntegerFromFloat(internalSensorData.temperature));
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", getIntegerFromFloat(internalSensorData.temperature));
     iTemp.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, ".%d", getFractionFromFloat(internalSensorData.temperature));
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, ".%d", getFractionFromFloat(internalSensorData.temperature));
     iTempFract.setText(displayBuffer);
 
     switch (getTrend(temperatureLastHour, 0, 60))
@@ -267,24 +303,24 @@ static void printIndoorSensor()
     }
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", (int) internalSensorData.temperatureMin);
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.temperatureMin);
     iTempMin.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", (int) internalSensorData.temperatureMax);
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.temperatureMax);
     iTempMax.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", (int) internalSensorData.dewPoint);
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.dewPoint);
     iDewPoint.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", (int) internalSensorData.humIndex);
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.humIndex);
     iHumIndex.setText(displayBuffer);
     iHumIndex.setFont(getHumindexColor((int) internalSensorData.humIndex));
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", (int) abs(internalSensorData.humidity));
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) abs(internalSensorData.humidity));
     iHum.setText(displayBuffer);
 
     switch (getTrend(humidityLastHour, 0, 60))
@@ -301,15 +337,15 @@ static void printIndoorSensor()
     }
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", getIntegerFromFloat(internalSensorData.humidityMin));
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", getIntegerFromFloat(internalSensorData.humidityMin));
     iHumMin.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%02d", getIntegerFromFloat(internalSensorData.humidityMax));
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", getIntegerFromFloat(internalSensorData.humidityMax));
     iHumMax.setText(displayBuffer);
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%i", internalSensorData.co2);
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%i", internalSensorData.co2);
     co2.setText(displayBuffer);
     co2.setFont(getCO2Color(internalSensorData.co2));
 
@@ -327,7 +363,7 @@ static void printIndoorSensor()
     }
 
     displayBuffer[0] = '\0';
-    sprintf(displayBuffer, "%i", internalSensorData.pressureMmHg);
+    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%i", internalSensorData.pressureMmHg);
     pressure.setText(displayBuffer);
 
     if (0 == pressureLast24H[21])
@@ -416,15 +452,16 @@ static void printAccessPoints(uint8_t page)
 
         field_index++;
         char ssid_field[30];
-        sprintf(ssid_field, "s%i.txt=\"%s\"", field_index, ssid);
+        snprintf(ssid_field, DISPLAY_BUFFER_SIZE, "s%u.txt=\"%s\"", field_index, ssid);
         sendCommand(ssid_field);
 
         char auth_field[15];
-        sprintf(auth_field, "l%i.txt=\"%s\"", field_index, (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) ? "" : "0");
+        snprintf(auth_field, DISPLAY_BUFFER_SIZE, "l%u.txt=\"%s\"", field_index,
+                 (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) ? "" : "0");
         sendCommand(auth_field);
 
         char rssi_field[15];
-        sprintf(rssi_field, "r%i.txt=\"%i\"", field_index, WiFi.RSSI(i));
+        snprintf(rssi_field, DISPLAY_BUFFER_SIZE, "r%u.txt=\"%i\"", field_index, WiFi.RSSI(i));
         sendCommand(rssi_field);
     }
 
@@ -542,9 +579,9 @@ void wifiSignalPopCallback(void *ptr)
         char ip[18];
         char netmask[18];
         char gw[18];
-        sprintf(ip, IPSTR, IP2STR(&ipinfo.ip));
-        sprintf(netmask, IPSTR, IP2STR(&ipinfo.netmask));
-        sprintf(gw, IPSTR, IP2STR(&ipinfo.gw));
+        snprintf(ip, 18, IPSTR, IP2STR(&ipinfo.ip));
+        snprintf(netmask, 18, IPSTR, IP2STR(&ipinfo.netmask));
+        snprintf(gw, 18, IPSTR, IP2STR(&ipinfo.gw));
 
         wifiSSID.setText((char *) wifi_config.sta.ssid);
         wifiPass.setText((char *) wifi_config.sta.password);

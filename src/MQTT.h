@@ -16,6 +16,8 @@ bool mqttPub(const char *topic, const char *data, bool retain = false);
 
 void mqttPubSensor(const char *topic, const char *data);
 
+void discoveryAll();
+
 void mqtt_send_task(void *pvParameters);
 
 void mqtt_uptime_task(void *pvParameters);
