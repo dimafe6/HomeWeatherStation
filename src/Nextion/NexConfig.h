@@ -24,7 +24,7 @@
  * Define DEBUG_SERIAL_ENABLE to enable debug serial. 
  * Comment it to disable debug serial. 
  */
-#define DEBUG_SERIAL_ENABLE
+//#define DEBUG_SERIAL_ENABLE
 
 /**
  * Define dbSerial for the output of debug messages. 
@@ -36,9 +36,9 @@
  */
 #define nexSerial Serial2
 
-#define NEX_DB_BAUDRATE 9600
+#define NEX_DB_BAUDRATE 115200
 
-#define NEX_BAUDRATE 921600
+#define NEX_BAUDRATE 115200
 
 #define BKCMD false
 

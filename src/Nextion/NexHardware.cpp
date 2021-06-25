@@ -136,6 +136,13 @@ uint16_t recvRetString(char *buffer, uint16_t len, uint32_t timeout)
         }
     }
 
+    while (nexSerial.available())
+    {
+        nexSerial.read();
+    }
+
+    nexSerial.flush();
+
     ret = temp.length();
     ret = ret > len ? len : ret;
     strncpy(buffer, temp.c_str(), ret);
@@ -162,6 +169,8 @@ void sendCommand(const char *cmd)
     {
         nexSerial.read();
     }
+
+    nexSerial.flush();
 
     nexSerial.print(cmd);
     nexSerial.write(0xFF);

@@ -1,21 +1,16 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#define countof(a) (sizeof(a) / sizeof(a[0]))
-
-typedef enum Trend
+typedef enum
 {
   T_RISING,
   T_STEADY,
   T_FALLING,
-};
+} Trend;
 
 float mod(float number);
-int getItegerFromFloat(float number);
+int getIntegerFromFloat(float number);
 int getFractionFromFloat(float number);
-float getMin(float *array, int size);
-float getMax(float *array, int size);
-float arraySum(float *array, int size);
 Trend getTrend(float *values, uint8_t startIndex, uint8_t size);
 
 #endif

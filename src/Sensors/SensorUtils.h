@@ -2,58 +2,52 @@
 #define SENSOR_UTILS_H
 
 #include "Arduino.h"
-#include <TimeLib.h>
 #include "../Utils.h"
 
 struct InternalSensorData
 {
-  int co2;
-  float mhz19Temperature;
-  float temperature;
-  float temperatureMin = NULL;
-  float temperatureMax = NULL;
-  float humidity;
-  float humidityMin = NULL;
-  float humidityMax = NULL;
-  float pressure; //hPa
-  int pressureMmHg;
-  float dewPoint;
-  int16_t humIndex;
-  int lux;
+    bool initialized = false;
+    int16_t co2;
+    float temperature;
+    float temperatureMin = NULL;
+    float temperatureMax = NULL;
+    float humidity;
+    float humidityMin = NULL;
+    float humidityMax = NULL;
+    float pressure; //hPa
+    int16_t pressureMmHg;
+    float dewPoint;
+    float humIndex;
+    int lux;
 };
 
 struct __attribute__((__packed__)) ExternalSensor
 {
-  int16_t temperature;
-  int16_t humidity;
-  uint8_t battery;
+    int16_t temperature;
+    int16_t humidity;
+    uint8_t battery;
 };
 
 struct ExternalSensorData
 {
-  uint8_t sensorId = NULL;
-  float temperature;
-  float temperatureMin = NULL;
-  float temperatureMax = NULL;
-  float humidity;
-  float humidityMin = NULL;
-  float humidityMax = NULL;
-  float dewPoint;
-  float humIndex;
-  uint32_t measurementTime = 0;
-  uint16_t sleepTime = 0;
-  uint8_t battery = 255;
-  uint8_t signal = 255;
+    bool initialized = false;
+    uint8_t sensorId = 255;
+    float temperature = 0;
+    float temperatureMin = 0;
+    float temperatureMax = 0;
+    float humidity = 0;
+    float humidityMin = 0;
+    float humidityMax = 0;
+    float dewPoint = 0;
+    float humIndex = 0;
+    uint32_t measurementTime = 0;
+    uint16_t sleepTime = 0;
+    uint8_t battery = 255;
+    uint8_t signal = 255;
 };
 
 double dewPointC(double celsius, double humidity);
 
 long humindex(float temp, float dewPoint);
-
-String getZambrettiExplanation(char c);
-
-char getZambrettiChar(float P, Trend trend);
-
-uint8_t getForecastImageNumberFromZambrettiChar(char zambrettiChar);
 
 #endif

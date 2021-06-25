@@ -6,14 +6,8 @@
 #include "Globals.h"
 #include "Config.h"
 #include "RTC.h"
+#include "MQTT.h"
 
-void IRAM_ATTR RF_ISR();
-void initRF();
-void readExternalSensorData();
-void updateExternalHumidityHistory();
-void updateExternalTemperatureHistory();
-void updateExternalHumidityHistoryOneHour();
-void updateExternalTemperatureHistoryOneHour();
-void checkSignal();
+void nrf24Task(void *pvParameters);
 
 #endif

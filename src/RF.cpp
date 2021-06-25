@@ -1,260 +1,226 @@
 #include "RF.h"
 
+static const char *TAG = "RF";
+
 RF24 radio(RF_CE, RF_CSN);
 
-const uint64_t pipes[RF_SENSORS_COUNT] = {0xF0F0F0F0D2LL, 0xF0F0F0F0C3LL, 0xF0F0F0F0B4LL, 0xF0F0F0F0A5LL, 0xF0F0F0F096LL};
-volatile bool hasExternalSensorData = false;
-unsigned long lastExternalTemperatureHistoryUpdateTime = EXTERNAL_TEMPERATURE_HISTORY_INTERVAL;
-unsigned long lastExternalHumidityHistoryUpdateTime = EXTERNAL_HUMIDITY_HISTORY_INTERVAL;
+const uint64_t pipes[RF_SENSORS_COUNT] = {0xF0F0F0F0D2LL, 0xF0F0F0F0C3LL, 0xF0F0F0F0B4LL, 0xF0F0F0F0A5LL,
+                                          0xF0F0F0F096LL};
 unsigned long lastExternalTemperatureHistoryOneHourUpdateTime = EXTERNAL_TEMPERATURE_HISTORY_ONE_HOUR_INTERVAL;
 unsigned long lastExternalHumidityHistoryOneHourUpdateTime = EXTERNAL_HUMIDITY_HISTORY_ONE_HOUR_INTERVAL;
 unsigned long lastSensorSignalCheckTime = UPDATE_SENSORS_INTERVAL;
 
-void initRF()
+void nrf24Task(void *pvParameters)
 {
-  radio.begin();
-  Serial.println("\nRF chip status:");
-  Serial.println(radio.isChipConnected());
-  radio.setAutoAck(false);
-  radio.setChannel(80);
-  radio.disableCRC();
-  radio.setPayloadSize(5);
-  radio.setPALevel(RF24_PA_MAX);
-  radio.setDataRate(RF24_250KBPS);
-  radio.maskIRQ(1, 1, 0);
+    radio.begin();
+    ESP_LOGI(TAG, "RF chip status: %i", radio.isChipConnected());
+    radio.setAutoAck(false);
+    radio.setChannel(80);
+    radio.disableCRC();
+    radio.setPayloadSize(5);
+    radio.setPALevel(RF24_PA_MAX);
+    radio.setDataRate(RF24_250KBPS);
+    radio.maskIRQ(1, 1, 0);
 
-  radio.openWritingPipe(0xF0F0F0F0AALL);
-  radio.openReadingPipe(1, pipes[0]);
-  radio.openReadingPipe(2, pipes[1]);
-  radio.openReadingPipe(3, pipes[2]);
-  radio.openReadingPipe(4, pipes[3]);
-  radio.openReadingPipe(5, pipes[4]);
+    radio.openWritingPipe(0xF0F0F0F0AALL);
+    radio.openReadingPipe(1, pipes[0]);
+    radio.openReadingPipe(2, pipes[1]);
+    radio.openReadingPipe(3, pipes[2]);
+    radio.openReadingPipe(4, pipes[3]);
+    radio.openReadingPipe(5, pipes[4]);
 
-  radio.startListening();
+    radio.startListening();
 
-  radio.printDetails();
+    //radio.printDetails();
 
-  pinMode(RF_IRQ, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(RF_IRQ), RF_ISR, FALLING);
-}
-
-void IRAM_ATTR RF_ISR()
-{
-  hasExternalSensorData = true;
-}
-
-void readExternalSensorData()
-{
-  if (hasExternalSensorData)
-  {
-    hasExternalSensorData = false;
-
-    uint8_t pipeNum = 0;
-    if (radio.available(&pipeNum))
+    while (true)
     {
-      radio.read(&externalSensor, sizeof(externalSensor));
+        delay(500);
 
-      if (externalSensor.temperature / 100 > 60 || externalSensor.temperature / 100 < -60)
-      {
-        return;
-      }
-
-      if (externalSensor.humidity / 100 > 100 || externalSensor.humidity / 100 < 0)
-      {
-        return;
-      }
-
-      prevExternalSensorData[pipeNum - 1] = externalSensorData[pipeNum - 1];
-
-      externalSensorData[pipeNum - 1].sensorId = pipeNum;
-      externalSensorData[pipeNum - 1].measurementTime = now();
-      externalSensorData[pipeNum - 1].battery = externalSensor.battery;
-      externalSensorData[pipeNum - 1].signal = radio.testRPD();
-
-      if (prevExternalSensorData[pipeNum - 1].measurementTime > 0)
-      {
-        externalSensorData[pipeNum - 1].sleepTime = externalSensorData[pipeNum - 1].measurementTime - prevExternalSensorData[pipeNum - 1].measurementTime;
-      }
-
-      externalSensorData[pipeNum - 1].humidity = externalHumidityFilter.filtered(float(externalSensor.humidity) / 100);
-      if (externalSensorData[pipeNum - 1].humidity < externalSensorData[pipeNum - 1].humidityMin || externalSensorData[pipeNum - 1].humidityMin == NULL)
-      {
-        externalSensorData[pipeNum - 1].humidityMin = externalSensorData[pipeNum - 1].humidity;
-      }
-      if (externalSensorData[pipeNum - 1].humidity > externalSensorData[pipeNum - 1].humidityMax || externalSensorData[pipeNum - 1].humidityMax == NULL)
-      {
-        externalSensorData[pipeNum - 1].humidityMax = externalSensorData[pipeNum - 1].humidity;
-      }
-
-      externalSensorData[pipeNum - 1].temperature = externalTemperatureFilter.filtered(float(externalSensor.temperature) / 100);
-      if (externalSensorData[pipeNum - 1].temperature < externalSensorData[pipeNum - 1].temperatureMin || externalSensorData[pipeNum - 1].temperatureMin == NULL)
-      {
-        externalSensorData[pipeNum - 1].temperatureMin = externalSensorData[pipeNum - 1].temperature;
-      }
-      if (externalSensorData[pipeNum - 1].temperature > externalSensorData[pipeNum - 1].temperatureMax || externalSensorData[pipeNum - 1].temperatureMax == NULL)
-      {
-        externalSensorData[pipeNum - 1].temperatureMax = externalSensorData[pipeNum - 1].temperature;
-      }
-
-      externalSensorData[pipeNum - 1].dewPoint = dewPointC(externalSensorData[pipeNum - 1].temperature, externalSensorData[pipeNum - 1].humidity);
-      externalSensorData[pipeNum - 1].humIndex = humindex(externalSensorData[pipeNum - 1].temperature, externalSensorData[pipeNum - 1].dewPoint);
-
-      // Update external temperature history
-      if (millis() - lastExternalTemperatureHistoryUpdateTime > EXTERNAL_TEMPERATURE_HISTORY_INTERVAL)
-      {
-        lastExternalTemperatureHistoryUpdateTime = millis();
-
-        updateExternalTemperatureHistory();
-      }
-
-      if (millis() - lastExternalTemperatureHistoryOneHourUpdateTime > EXTERNAL_TEMPERATURE_HISTORY_ONE_HOUR_INTERVAL)
-      {
-        lastExternalTemperatureHistoryOneHourUpdateTime = millis();
-
-        updateExternalTemperatureHistoryOneHour();
-      }
-
-      // Update external humidity history
-      if (millis() - lastExternalHumidityHistoryUpdateTime > EXTERNAL_HUMIDITY_HISTORY_INTERVAL)
-      {
-        lastExternalHumidityHistoryUpdateTime = millis();
-
-        updateExternalHumidityHistory();
-      }
-
-      if (millis() - lastExternalHumidityHistoryOneHourUpdateTime > EXTERNAL_HUMIDITY_HISTORY_ONE_HOUR_INTERVAL)
-      {
-        lastExternalHumidityHistoryOneHourUpdateTime = millis();
-
-        updateExternalHumidityHistoryOneHour();
-      }
-
-      shouldRedrawDisplay = true;
-
-      Serial.print("Outdoor sensor ");
-      Serial.print(pipeNum);
-      Serial.println(":");
-      Serial.print("Temp: ");
-      Serial.print(externalSensorData[pipeNum - 1].temperature, 2);
-      Serial.println();
-
-      Serial.print("Humidity: ");
-      Serial.print(externalSensorData[pipeNum - 1].humidity, 2);
-      Serial.println();
-
-      Serial.print("Dew point: ");
-      Serial.print(externalSensorData[pipeNum - 1].dewPoint, 2);
-      Serial.println();
-
-      Serial.print("Hum index: ");
-      Serial.print(externalSensorData[pipeNum - 1].humIndex, 2);
-      Serial.println();
-
-      Serial.print("Signal level: ");
-      Serial.print(externalSensorData[pipeNum - 1].signal ? "Strong signal" : "Week signal");
-      Serial.println();
-
-      Serial.print("Battery percent: ");
-      Serial.print(externalSensorData[pipeNum - 1].battery);
-      Serial.print('%');
-      Serial.println();
-
-      Serial.print("Sleep time: ");
-      Serial.print(externalSensorData[pipeNum - 1].sleepTime);
-      Serial.println();
-    }
-  }
-}
-
-void updateExternalTemperatureHistory()
-{
-  for (int n = 0; n < RF_SENSORS_COUNT; n++)
-  {
-    for (int i = 0; i < 95; i++)
-    {
-      externalTemperatureLast24H[n][i] = externalTemperatureLast24H[n][i + 1];
-    }
-
-    externalTemperatureLast24H[n][95] = externalSensorData[n].temperature;
-  }
-}
-
-void updateExternalTemperatureHistoryOneHour()
-{
-  for (int n = 0; n < RF_SENSORS_COUNT; n++)
-  {
-    for (int i = 0; i < 59; i++)
-    {
-      externalTemperatureLastHour[n][i] = externalTemperatureLastHour[n][i + 1];
-    }
-
-    externalTemperatureLastHour[n][59] = externalSensorData[n].temperature;
-  }
-}
-
-void updateExternalHumidityHistory()
-{
-  for (int n = 0; n < RF_SENSORS_COUNT; n++)
-  {
-    for (int i = 0; i < 95; i++)
-    {
-      externalHumidityLast24H[n][i] = externalHumidityLast24H[n][i + 1];
-    }
-
-    externalHumidityLast24H[n][95] = externalSensorData[n].humidity;
-  }
-}
-
-void updateExternalHumidityHistoryOneHour()
-{
-  for (int n = 0; n < RF_SENSORS_COUNT; n++)
-  {
-    for (int i = 0; i < 59; i++)
-    {
-      externalHumidityLastHour[n][i] = externalHumidityLastHour[n][i + 1];
-    }
-
-    externalHumidityLastHour[n][59] = externalSensorData[n].humidity;
-  }
-}
-
-void checkSignal()
-{
-  if (millis() - lastSensorSignalCheckTime > UPDATE_SENSORS_INTERVAL)
-  {
-    lastSensorSignalCheckTime = millis();
-
-    for (uint8_t i = 0; i < RF_SENSORS_COUNT; i++)
-    {
-      if (externalSensorData[i].sensorId == NULL)
-      {
-        continue;
-      }
-
-      if (externalSensorData[i].sleepTime > 0 && externalSensorData[i].measurementTime > 0)
-      {
-        uint32_t lastDataReceiveSeconds = now() - externalSensorData[i].measurementTime;
-        uint32_t losedMessages = lastDataReceiveSeconds / externalSensorData[i].sleepTime;
-
-        Serial.println("losedMessages\n");
-        Serial.println(losedMessages);
-
-        if (losedMessages >= RF_MAX_LOSSS_MESSAGES_BEFORE_LOSE_SIGNAL)
+        uint8_t pipeNum = 0;
+        if (radio.available(&pipeNum))
         {
-          externalSensorData[i].temperature = 0;
-          externalSensorData[i].temperatureMin = 0;
-          externalSensorData[i].temperatureMax = 0;
-          externalSensorData[i].humidity = 0;
-          externalSensorData[i].humidityMin = 0;
-          externalSensorData[i].humidityMax = 0;
-          externalSensorData[i].dewPoint = 0;
-          externalSensorData[i].humIndex = 0;
-          externalSensorData[i].battery = 255;
-          externalSensorData[i].signal = 255;
+            if (xSemaphoreTake(xGlobalVariablesMutex, portMAX_DELAY) == pdTRUE)
+            {
+                radio.read(&externalSensor, sizeof(externalSensor));
 
-          shouldRedrawDisplay = true;
+                externalSensor.temperature /= 100;
+                externalSensor.humidity /= 100;
+
+                if (externalSensor.temperature < 60 && externalSensor.temperature > -60 &&
+                    externalSensor.humidity < 100 && externalSensor.humidity > 0)
+                {
+
+                    prevExternalSensorData[pipeNum - 1] = externalSensorData[pipeNum - 1];
+
+                    externalSensorData[pipeNum - 1].sensorId = pipeNum;
+                    externalSensorData[pipeNum - 1].measurementTime = now();
+
+                    if (externalSensor.battery >= 0 && externalSensor.battery <= 100)
+                    {
+                        externalSensorData[pipeNum - 1].battery = externalSensor.battery;
+                    }
+
+                    externalSensorData[pipeNum - 1].signal = radio.testRPD();
+                    externalSensorData[pipeNum - 1].humidity = externalSensor.humidity;
+                    externalSensorData[pipeNum - 1].temperature = externalSensor.temperature;
+
+                    if (prevExternalSensorData[pipeNum - 1].initialized)
+                    {
+                        externalSensorData[pipeNum - 1].sleepTime = externalSensorData[pipeNum - 1].measurementTime -
+                                                                    prevExternalSensorData[pipeNum - 1].measurementTime;
+                    }
+
+                    if (externalSensorData[pipeNum - 1].initialized)
+                    {
+                        externalSensorData[pipeNum - 1].humidityMin = min(
+                                externalSensorData[pipeNum - 1].humidityMin,
+                                externalSensorData[pipeNum - 1].humidity
+                        );
+                        externalSensorData[pipeNum - 1].humidityMax = max(
+                                externalSensorData[pipeNum - 1].humidityMax,
+                                externalSensorData[pipeNum - 1].humidity
+                        );
+                        externalSensorData[pipeNum - 1].temperatureMin = min(
+                                externalSensorData[pipeNum - 1].temperatureMin,
+                                externalSensorData[pipeNum - 1].temperature
+                        );
+                        externalSensorData[pipeNum - 1].temperatureMax = max(
+                                externalSensorData[pipeNum - 1].temperatureMax,
+                                externalSensorData[pipeNum - 1].temperature
+                        );
+                    } else
+                    {
+                        externalSensorData[pipeNum - 1].humidityMin = externalSensorData[pipeNum - 1].humidity;
+                        externalSensorData[pipeNum - 1].humidityMax = externalSensorData[pipeNum - 1].humidity;
+                        externalSensorData[pipeNum - 1].temperatureMin = externalSensorData[pipeNum - 1].temperature;
+                        externalSensorData[pipeNum - 1].temperatureMax = externalSensorData[pipeNum - 1].temperature;
+                    }
+
+                    externalSensorData[pipeNum - 1].dewPoint = dewPointC(
+                            externalSensorData[pipeNum - 1].temperature,
+                            externalSensorData[pipeNum - 1].humidity
+                    );
+                    externalSensorData[pipeNum - 1].humIndex = humindex(
+                            externalSensorData[pipeNum - 1].temperature,
+                            externalSensorData[pipeNum - 1].dewPoint
+                    );
+
+                    externalSensorData[pipeNum - 1].initialized = true;
+
+                    ESP_LOGI(
+                            TAG,
+                            "Sensor %i:\nTemp: %02.2f\nHum: %02.2f\nHum(min): %02.2f\nDew:  %02.2f\nHI: %02.2f\nBat: %i",
+                            pipeNum,
+                            externalSensorData[pipeNum - 1].temperature,
+                            externalSensorData[pipeNum - 1].humidity,
+                            externalSensorData[pipeNum - 1].humidityMin,
+                            externalSensorData[pipeNum - 1].dewPoint,
+                            externalSensorData[pipeNum - 1].humIndex,
+                            externalSensorData[pipeNum - 1].battery);
+
+                    // Update external temperature history
+                    if (millis() - lastExternalTemperatureHistoryOneHourUpdateTime >
+                        EXTERNAL_TEMPERATURE_HISTORY_ONE_HOUR_INTERVAL)
+                    {
+                        lastExternalTemperatureHistoryOneHourUpdateTime = millis();
+
+                        for (int n = 0; n < RF_SENSORS_COUNT; n++)
+                        {
+                            for (int i = 0; i < 59; i++)
+                            {
+                                externalTemperatureLastHour[n][i] = externalTemperatureLastHour[n][i + 1];
+                            }
+
+                            externalTemperatureLastHour[n][59] = externalSensorData[n].temperature;
+                        }
+                    }
+
+                    // Update external humidity history
+                    if (millis() - lastExternalHumidityHistoryOneHourUpdateTime >
+                        EXTERNAL_HUMIDITY_HISTORY_ONE_HOUR_INTERVAL)
+                    {
+                        lastExternalHumidityHistoryOneHourUpdateTime = millis();
+
+                        for (int n = 0; n < RF_SENSORS_COUNT; n++)
+                        {
+                            for (int i = 0; i < 59; i++)
+                            {
+                                externalHumidityLastHour[n][i] = externalHumidityLastHour[n][i + 1];
+                            }
+
+                            externalHumidityLastHour[n][59] = externalSensorData[n].humidity;
+                        }
+                    }
+
+                    // Send to MQTT
+                    char buf[200] = {0};
+                    char topic_name[12] = {0};
+
+                    sprintf(topic_name, "outdoor/%i", pipeNum);
+                    sprintf(
+                            buf,
+                            R"({"temp":%2.2f,"hum":%2.2f,"dp":%2.2f,"hi":%2.2f,"bat":%i})",
+                            externalSensorData[pipeNum - 1].temperature,
+                            externalSensorData[pipeNum - 1].humidity,
+                            externalSensorData[pipeNum - 1].dewPoint,
+                            externalSensorData[pipeNum - 1].humIndex,
+                            externalSensorData[pipeNum - 1].battery);
+                    mqttPubSensor(topic_name, buf);
+                } else
+                {
+                    ESP_LOGI(
+                            TAG,
+                            "Wrong sensor %i data:\nTemp(x100): %i\nHum(x100): %i\n",
+                            pipeNum,
+                            externalSensor.temperature,
+                            externalSensor.humidity);
+                }
+
+                xSemaphoreGive(xGlobalVariablesMutex);
+            } else
+            {
+                ESP_LOGE(TAG, "Could not obtain the semaphore xGlobalVariablesMutex from task %s",
+                         pcTaskGetTaskName(NULL));
+            }
         }
-      }
+
+        if (millis() - lastSensorSignalCheckTime > UPDATE_SENSORS_INTERVAL)
+        {
+            lastSensorSignalCheckTime = millis();
+
+            for (uint8_t i = 0; i < RF_SENSORS_COUNT; i++)
+            {
+                if (!externalSensorData[i].initialized)
+                {
+                    continue;
+                }
+
+                if (externalSensorData[i].sleepTime > 0 && externalSensorData[i].measurementTime > 0)
+                {
+                    uint32_t lastDataReceiveSeconds = now() - externalSensorData[i].measurementTime;
+                    uint32_t losedMessages = lastDataReceiveSeconds / externalSensorData[i].sleepTime;
+
+                    if (losedMessages > 0)
+                    {
+                        ESP_LOGW(TAG, "Loosed %i message(s) from sensor id %i", losedMessages, i + 1);
+                    }
+
+                    if (losedMessages >= RF_MAX_LOSSS_MESSAGES_BEFORE_LOSE_SIGNAL)
+                    {
+                        externalSensorData[i].temperature = 0;
+                        externalSensorData[i].temperatureMin = 0;
+                        externalSensorData[i].temperatureMax = 0;
+                        externalSensorData[i].humidity = 0;
+                        externalSensorData[i].humidityMin = 0;
+                        externalSensorData[i].humidityMax = 0;
+                        externalSensorData[i].dewPoint = 0;
+                        externalSensorData[i].humIndex = 0;
+                        externalSensorData[i].battery = 255;
+                        externalSensorData[i].signal = 255;
+                    }
+                }
+            }
+        }
     }
-  }
 }

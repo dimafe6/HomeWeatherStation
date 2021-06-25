@@ -6,7 +6,5 @@
 #include "../Globals.h"
 #include "../Config.h"
 
-void initMHZ19();
-void readMHZ19Data();
-uint32_t getCO2Color();
+void co2_task(void *pvParameters);
 #endif

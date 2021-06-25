@@ -1,6 +1,8 @@
 #include "RTC.h"
 
-RtcDS3231<TwoWire> Rtc(Wire);
+static const char *TAG = "BME280";
+
+RtcDS3231 <TwoWire> Rtc(Wire);
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 
@@ -19,7 +21,7 @@ void initRtc()
 
     if (!Rtc.GetIsRunning())
     {
-        Serial.println("RTC was not actively running, starting now");
+        ESP_LOGI(TAG, "RTC was not actively running, starting now");
         Rtc.SetIsRunning(true);
     }
 
@@ -27,28 +29,28 @@ void initRtc()
 
     Rtc.Enable32kHzPin(false);
 
-    Serial.println("\nRTC module time:");
+    ESP_LOGI(TAG, "RTC module time:");
     printDateTime(Rtc.GetDateTime());
 }
 
 void printDateTime(const RtcDateTime &dt)
 {
-    char datestring[20];
-
-    snprintf_P(datestring,
-               countof(datestring),
-               PSTR("%02u/%02u/%04u %02u:%02u:%02u"),
-               dt.Month(),
-               dt.Day(),
-               dt.Year(),
-               dt.Hour(),
-               dt.Minute(),
-               dt.Second());
-    Serial.print(datestring);
+    ESP_LOGI(
+            TAG,
+            "%04u/%02u/%02u %02u:%02u:%02u",
+            dt.Year(),
+            dt.Month(),
+            dt.Day(),
+            dt.Hour(),
+            dt.Minute(),
+            dt.Second()
+    );
 }
 
 void syncTimeFromNTP()
 {
+    ESP_LOGI(TAG, "Sync time from NTP");
+
     timeClient.begin();
     timeClient.forceUpdate();
     timeClient.end();
@@ -56,30 +58,11 @@ void syncTimeFromNTP()
     setTime(uaTZ.toLocal(timeClient.getEpochTime()));
     Rtc.SetDateTime(RtcDateTime(year(), month(), day(), hour(), minute(), second()));
 
-    Serial.println("RTC module time:");
+    ESP_LOGI(TAG, "Time from NTP:");
     printDateTime(Rtc.GetDateTime());
 }
 
 time_t rtcEpoch32Time()
 {
     return Rtc.GetDateTime().Epoch32Time();
-}
-
-void syncTimeIfRTCInvalid()
-{
-    RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
-    RtcDateTime now = Rtc.GetDateTime();
-
-    if (!Rtc.IsDateTimeValid() || now < compiled)
-    {
-        if (Rtc.LastError() != 0)
-        {
-            Serial.print("RTC communications error = ");
-            Serial.println(Rtc.LastError());
-        }
-
-        Serial.println("RTC module time is invalid. Try to sync with NTP...");
-
-        syncTimeFromNTP();
-    }
 }

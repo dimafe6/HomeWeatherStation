@@ -6,7 +6,7 @@ float mod(float number)
     return number >= 0 ? number : number * -1;
 }
 
-int getItegerFromFloat(float number)
+int getIntegerFromFloat(float number)
 {
     int result = number * 10;
 
@@ -16,39 +16,6 @@ int getItegerFromFloat(float number)
 int getFractionFromFloat(float number)
 {
     return mod(int(number * 10) % 10);
-}
-
-float getMin(float *array, int size)
-{
-    int minimum = array[0];
-    for (int i = 0; i < size; i++)
-    {
-        if (array[i] < minimum)
-            minimum = array[i];
-    }
-    return minimum;
-}
-
-float getMax(float *array, int size)
-{
-    int maximum = array[0];
-    for (int i = 0; i < size; i++)
-    {
-        if (array[i] > maximum)
-            maximum = array[i];
-    }
-    return maximum;
-}
-
-float arraySum(float *array, int size)
-{
-    float sum = 0;
-    for (int i = 0; i < size; i++)
-    {
-        sum += array[i];
-    }
-
-    return sum;
 }
 
 Trend getTrend(float *values, uint8_t startIndex, uint8_t size)

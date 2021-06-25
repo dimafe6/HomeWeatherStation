@@ -14,7 +14,6 @@
 void initRtc();
 void printDateTime(const RtcDateTime &dt);
 void syncTimeFromNTP();
-void syncTimeIfRTCInvalid();
 time_t rtcEpoch32Time();
 
 #endif

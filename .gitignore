@@ -1,2 +1,4 @@
 .vscode
 Secrets.h
+/cmake-build-debug/
+.idea

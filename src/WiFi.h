@@ -3,10 +3,13 @@
 
 #include <WiFi.h>
 #include "Secrets.h"
+#include "Globals.h."
 #include "Config.h"
 #include "RTC.h"
+#include "MQTT.h"
 
 void initWiFi();
+
 void WiFiEvent(WiFiEvent_t event);
 
 #endif
