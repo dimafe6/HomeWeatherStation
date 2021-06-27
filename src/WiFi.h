@@ -2,7 +2,6 @@
 #define WIFI_H
 
 #include <WiFi.h>
-#include "Secrets.h"
 #include "Globals.h."
 #include "Config.h"
 #include "RTC.h"

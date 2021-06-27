@@ -16,6 +16,8 @@ void oHot1PushCallback(void *ptr);
 
 void oHot2PushCallback(void *ptr);
 
+void wifiClosePopCallback(void *ptr);
+
 void wifiSignalPopCallback(void *ptr);
 
 void wifiScanPopCallback(void *ptr);

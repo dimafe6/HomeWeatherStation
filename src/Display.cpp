@@ -68,9 +68,10 @@ NexNumber wifiStaticIp = NexNumber(2, 11, "rs");
 NexButton wifiScanPrev = NexButton(5, 1, "prevB");
 NexButton wifiScanNext = NexButton(5, 2, "nextB");
 NexButton wifiScanRescan = NexButton(5, 25, "scanB");
+NexButton wifiClose = NexButton(2, 16, "wifiClose");
 
 NexTouch *nextionListen[] = {&oHot1, &oHot2, &wifiSignal, &wifiScan, &wifiScanPrev, &wifiScanNext, &wifiScanRescan,
-                             &wifiSave};
+                             &wifiSave, &wifiClose};
 
 static uint32_t getCO2Color(int16_t co2)
 {
@@ -533,6 +534,7 @@ void initDisplay()
     wifiScanNext.attachPop(wifiScanNextPopCallback, &wifiScanNext);
     wifiScanRescan.attachPop(wifiScanPopCallback, &wifiScanRescan);
     wifiSave.attachPop(wifiSavePopCallback, &wifiSave);
+    wifiClose.attachPop(wifiClosePopCallback, &wifiClose);
 
     sendCommand("page 0");
 }
@@ -547,7 +549,7 @@ void oHot1PushCallback(void *ptr)
         currentOutdoorSensorId--;
     }
 
-    memset(displayBuffer, 0, sizeof(displayBuffer));
+    displayBuffer[0] = '\0';
     itoa(currentOutdoorSensorId + 1, displayBuffer, 10);
 
     printCurrentOutdoorSensor();
@@ -561,14 +563,22 @@ void oHot2PushCallback(void *ptr)
         currentOutdoorSensorId = 0;
     }
 
-    memset(displayBuffer, 0, sizeof(displayBuffer));
+    displayBuffer[0] = '\0';
     itoa(currentOutdoorSensorId + 1, displayBuffer, 10);
 
     printCurrentOutdoorSensor();
 }
 
+void wifiClosePopCallback(void *ptr)
+{
+    sendCommand("page pmain");
+    lastDisplayUpdateTime = UPDATE_DISPLAY_INTERVAL; // Update display now
+}
+
 void wifiSignalPopCallback(void *ptr)
 {
+    sendCommand("page pwifi");
+
     if (WiFi.status() == WL_CONNECTED)
     {
         wifi_config_t wifi_config;
@@ -593,6 +603,12 @@ void wifiSignalPopCallback(void *ptr)
 
 void wifiScanPopCallback(void *ptr)
 {
+    sendCommand("page pscan_wifi");
+    sendCommand("vis loader,1");
+    sendCommand("vis scanB,0");
+    sendCommand("vis prevB,0");
+    sendCommand("vis nextB,0");
+
     ESP_LOGI(TAG, "Start scanning WiFI");
     ESP_LOGI(TAG, "Disconnecting...");
 
@@ -603,11 +619,6 @@ void wifiScanPopCallback(void *ptr)
     delay(100);
 
     ESP_LOGI(TAG, "Disconnected");
-
-    sendCommand("vis loader,1");
-    sendCommand("vis scanB,0");
-    sendCommand("vis prevB,0");
-    sendCommand("vis nextB,0");
 
     int n = WiFi.scanNetworks();
     ESP_LOGI(TAG, "Scan done");

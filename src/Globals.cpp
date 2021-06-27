@@ -1,6 +1,5 @@
 #include "Globals.h"
 
-SemaphoreHandle_t xGlobalVariablesMutex = NULL;
 SemaphoreHandle_t xMQTTMutex;
 
 InternalSensorData internalSensorData;

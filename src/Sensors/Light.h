@@ -1,13 +1,13 @@
-#ifndef I2C_SENSORS_H
-#define I2C_SENSORS_H
+#ifndef BH1750_SENSOR_H
+#define BH1750_SENSOR_H
 
 #include "Arduino.h"
-#include <SparkFunBME280.h>
 #include "BH1750.h"
 #include "../Globals.h"
 #include "../Config.h"
 #include "SensorUtils.h"
 
-void i2cSensorsTask(void *pvParameters);
+void initBH1750();
+void bh1750_task();
 
 #endif

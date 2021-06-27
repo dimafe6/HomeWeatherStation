@@ -5,7 +5,6 @@
 #include "Config.h"
 #include "Sensors/SensorUtils.h"
 
-extern SemaphoreHandle_t xGlobalVariablesMutex;
 extern SemaphoreHandle_t xMQTTMutex;
 
 extern InternalSensorData internalSensorData;

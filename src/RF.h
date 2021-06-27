@@ -6,8 +6,8 @@
 #include "Globals.h"
 #include "Config.h"
 #include "RTC.h"
-#include "MQTT.h"
 
-void nrf24Task(void *pvParameters);
+void initRF();
+void nrf24_task();
 
 #endif

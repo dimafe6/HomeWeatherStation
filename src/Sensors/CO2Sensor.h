@@ -6,5 +6,6 @@
 #include "../Globals.h"
 #include "../Config.h"
 
-void co2_task(void *pvParameters);
+void initMHZ19();
+void co2_task();
 #endif

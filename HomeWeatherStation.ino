@@ -7,13 +7,25 @@
 #include "./src/Display.h"
 #include "./src/WiFi.h"
 #include "./src/Sensors/CO2Sensor.h"
-#include "./src/Sensors/I2CSensors.h"
+#include "./src/Sensors/BME280.h"
+#include "./src/Sensors/Light.h"
+
+#define _TASK_TIMECRITICAL
+#define _TASK_SLEEP_ON_IDLE_RUN
+
+#include <TaskScheduler.h>
 
 static const char *TAG = "MAIN";
 
+Task task_nrf24(500, TASK_FOREVER, &nrf24_task);
+Task task_co2(UPDATE_MHZ19_INTERVAL, TASK_FOREVER, &co2_task);
+Task task_bme280(UPDATE_BME280_INTERVAL, TASK_FOREVER, &bme280_task);
+Task task_bh1750(UPDATE_BH1750_INTERVAL, TASK_FOREVER, &bh1750_task);
+
+Scheduler runner;
+
 void setup()
 {
-    vSemaphoreCreateBinary(xGlobalVariablesMutex);
     vSemaphoreCreateBinary(xMQTTMutex);
 
     esp_log_level_set("*", ESP_LOG_DEBUG);
@@ -40,14 +52,26 @@ void setup()
 
     mqttClient.enableLastWillMessage(lwt_topic, "offline");
     mqttClient.setMaxPacketSize(2048);
+    mqttClient.setMqttReconnectionAttemptDelay(2000);
+    mqttClient.enableDebuggingMessages(true);
 
     initDisplay();
     initRtc();
     initWiFi();
+    initRF();
+    initMHZ19();
+    initBH1750();
+    initBME280();
 
-    xTaskCreatePinnedToCore(nrf24Task, "nrf24Task", configMINIMAL_STACK_SIZE * 4, NULL, 1, NULL, APP_CPU_NUM);
-    xTaskCreatePinnedToCore(co2_task, "co2_task", configMINIMAL_STACK_SIZE * 2, NULL, 1, NULL, APP_CPU_NUM);
-    xTaskCreatePinnedToCore(i2cSensorsTask, "i2cSensorsTask", configMINIMAL_STACK_SIZE * 4, NULL, 1, NULL, APP_CPU_NUM);
+    runner.init();
+    runner.addTask(task_nrf24);
+    runner.addTask(task_co2);
+    runner.addTask(task_bme280);
+    runner.addTask(task_bh1750);
+    task_nrf24.enable();
+    task_co2.enable();
+    task_bme280.enable();
+    task_bh1750.enable();
 }
 
 void loop()
@@ -58,8 +82,11 @@ void loop()
 
     if (WiFi.status() == WL_CONNECTED)
     {
-        if(timeClient.update()) {
+        if (timeClient.update())
+        {
             syncTimeFromNTP();
         }
     }
+
+    runner.execute();
 }

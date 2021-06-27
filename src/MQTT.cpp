@@ -162,6 +162,28 @@ void mqtt_send_task(void *pvParameters)
 
             mqttPubSensor("indoor", buf);
             mqttPub(lwt_topic, "online");
+
+            for (int n = 1; n <= RF_SENSORS_COUNT; n++)
+            {
+                if (externalSensorData[n - 1].initialized)
+                {
+                    buf[0] = '\0';
+                    char topic_name[12] = {0};
+
+                    snprintf(topic_name, 12, "outdoor/%i", n);
+                    snprintf(
+                            buf,
+                            200,
+                            R"({"temp":%2.2f,"hum":%2.2f,"dp":%2.2f,"hi":%2.2f,"bat":%u})",
+                            externalSensorData[n - 1].temperature,
+                            externalSensorData[n - 1].humidity,
+                            externalSensorData[n - 1].dewPoint,
+                            externalSensorData[n - 1].humIndex,
+                            externalSensorData[n - 1].battery
+                    );
+                    mqttPubSensor(topic_name, buf);
+                }
+            }
         }
 
         delay(MQTT_SEND_INTERVAL);
