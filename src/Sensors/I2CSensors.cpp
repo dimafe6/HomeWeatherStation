@@ -24,6 +24,8 @@ void i2cSensorsTask(void *pvParameters)
     bme280.setTempOverSample(2);
     bme280.setPressureOverSample(2);
     bme280.setHumidityOverSample(2);
+    bme280.setStandbyTime(5);
+    bme280.setMode(MODE_NORMAL);
 
     while (1)
     {

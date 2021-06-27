@@ -101,54 +101,42 @@ static void printResetReason()
     char topic[100];
     snprintf(topic, 100, "hws/%s/reset_reason", mac_address);
 
-    RESET_REASON reason = rtc_get_reset_reason(0);
+    esp_reset_reason_t reset_reason = esp_reset_reason();
 
-    switch (reason)
+    switch (reset_reason)
     {
-        case 1 :
-            mqttPub(topic, "Vbat power on reset", true);
+        case ESP_RST_UNKNOWN:
+            mqttPub(topic, "Reset reason can not be determined", true);
             break;
-        case 3 :
-            mqttPub(topic, "Software reset digital core", true);
+        case ESP_RST_POWERON:
+            mqttPub(topic, "Reset due to power-on event", true);
             break;
-        case 4 :
-            mqttPub(topic, "Legacy watch dog reset digital core", true);
+        case ESP_RST_EXT:
+            mqttPub(topic, "Reset by external pin (not applicable for ESP32)", true);
             break;
-        case 5 :
-            mqttPub(topic, "Deep Sleep reset digital core", true);
+        case ESP_RST_SW:
+            mqttPub(topic, "Software reset via esp_restart", true);
             break;
-        case 6 :
-            mqttPub(topic, "Reset by SLC module, reset digital core", true);
+        case ESP_RST_PANIC:
+            mqttPub(topic, "Software reset due to exception/panic", true);
             break;
-        case 7 :
-            mqttPub(topic, "Timer Group0 Watch dog reset digital core", true);
+        case ESP_RST_INT_WDT:
+            mqttPub(topic, "Reset (software or hardware) due to interrupt watchdog", true);
             break;
-        case 8 :
-            mqttPub(topic, "Timer Group1 Watch dog reset digital core", true);
+        case ESP_RST_TASK_WDT:
+            mqttPub(topic, "Reset due to task watchdog", true);
             break;
-        case 9 :
-            mqttPub(topic, "RTC Watch dog Reset digital core", true);
+        case ESP_RST_WDT:
+            mqttPub(topic, "Reset due to other watchdogs", true);
             break;
-        case 10 :
-            mqttPub(topic, "Instruction tested to reset CPU", true);
+        case ESP_RST_DEEPSLEEP:
+            mqttPub(topic, "Reset after exiting deep sleep mode", true);
             break;
-        case 11 :
-            mqttPub(topic, "Time Group reset CPU", true);
+        case ESP_RST_BROWNOUT:
+            mqttPub(topic, "Brownout reset (software or hardware)", true);
             break;
-        case 12 :
-            mqttPub(topic, "Software reset CPU", true);
-            break;
-        case 13 :
-            mqttPub(topic, "RTC Watch dog Reset CPU", true);
-            break;
-        case 14 :
-            mqttPub(topic, "Reseted by PRO CPU", true);
-            break;
-        case 15 :
-            mqttPub(topic, "Reset when the vdd voltage is not stable", true);
-            break;
-        case 16 :
-            mqttPub(topic, "RTC Watch dog reset digital core and rtc module", true);
+        case ESP_RST_SDIO:
+            mqttPub(topic, "Reset over SDIO", true);
             break;
     }
 }
@@ -188,7 +176,7 @@ void mqtt_uptime_task(void *pvParameters)
         {
             char uptime[25];
             sprintf(uptime, "%i\0", esp_timer_get_time() / 1000000);
-            mqttPubSensor("uptime", uptime);
+            mqttPubSensor("uptime", uptime, true);
 
             char sysInfo[400];
 
@@ -266,13 +254,13 @@ bool mqttPub(const char *topic, const char *data, bool retain)
     return false;
 }
 
-void mqttPubSensor(const char *topic, const char *data)
+void mqttPubSensor(const char *topic, const char *data, bool persistent)
 {
     uint16_t topic_name_size = strlen(topic) + strlen(mac_address) + 8;
     char topic_name[topic_name_size];
     snprintf(topic_name, topic_name_size, "hws/%s/%s", mac_address, topic);
 
-    mqttPub(topic_name, data);
+    mqttPub(topic_name, data, persistent);
 }
 
 void discoveryAll()
@@ -379,7 +367,8 @@ void discoveryAll()
             R"({{ ', ' }})"
             R"({%- endif -%})"
             R"({{ '%02d' % hours }}:{{ '%02d' % minutes }})",
-            lwt_topic
+            lwt_topic,
+            0
     );
 
     mqttDiscovery(
@@ -409,10 +398,10 @@ void discoveryAll()
     mqttDiscovery(
             "sensor",
             "sys_info-rssi",
-            "",
+            "signal_strength",
             "HWS Sys info RSSI",
             "sys_info",
-            "",
+            "db",
             "{{value_json.rssi}}",
             lwt_topic,
             0
@@ -532,7 +521,7 @@ void onConnectionEstablished()
     ESP_LOGI(TAG, "MQTT connected!");
 
     mqttClient.subscribe("hws/weather", [](const String &topic, const String &payload) {
-        strncpy(weather_condition, payload.c_str(), payload.length());
+        strncpy(weather_condition, payload.c_str(), 20);
     });
 
     mqttClient.subscribe("homeassistant/status", [](const String &topic, const String &payload) {

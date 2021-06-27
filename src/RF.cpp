@@ -44,12 +44,18 @@ void nrf24Task(void *pvParameters)
             {
                 radio.read(&externalSensor, sizeof(externalSensor));
 
-                externalSensor.temperature /= 100;
-                externalSensor.humidity /= 100;
-
-                if (externalSensor.temperature < 60 && externalSensor.temperature > -60 &&
-                    externalSensor.humidity < 100 && externalSensor.humidity > 0)
+                if (externalSensor.temperature >= -6000 && externalSensor.temperature <= 6000 &&
+                    externalSensor.humidity >= 0 && externalSensor.humidity <= 10000)
                 {
+                    if (externalSensor.temperature != 0)
+                    {
+                        externalSensor.temperature /= 100;
+                    }
+
+                    if (externalSensor.humidity != 0)
+                    {
+                        externalSensor.humidity /= 100;
+                    }
 
                     prevExternalSensorData[pipeNum - 1] = externalSensorData[pipeNum - 1];
 

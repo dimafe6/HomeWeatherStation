@@ -14,7 +14,7 @@ void onConnectionEstablished();
 
 bool mqttPub(const char *topic, const char *data, bool retain = false);
 
-void mqttPubSensor(const char *topic, const char *data);
+void mqttPubSensor(const char *topic, const char *data, bool persistent = false);
 
 void discoveryAll();
 
