@@ -1,5 +1,7 @@
 #include "Light.h"
 
+static const char *TAG = "BH1750";
+
 BH1750 lightMeter;
 
 void initBH1750()

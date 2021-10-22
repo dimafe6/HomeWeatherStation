@@ -34,4 +34,6 @@ void redrawDisplay();
 
 void initDisplay();
 
+void pirISR();
+
 #endif

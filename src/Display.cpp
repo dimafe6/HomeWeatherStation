@@ -12,27 +12,23 @@ uint8_t ap_max_pages = 4;
 
 NexText iTempSign = NexText(0, 255, "iTempSign");
 NexText iTemp = NexText(0, 255, "iTemp");
-NexText iTempTrend = NexText(0, 255, "iTempTrend");
 NexText iTempFract = NexText(0, 255, "iTempFract");
 NexText iTempMin = NexText(0, 255, "iTempMin");
 NexText iTempMax = NexText(0, 255, "iTempMax");
 NexText iDewPoint = NexText(0, 255, "iDewPoint");
 NexText iHumIndex = NexText(0, 255, "iHumIndex");
 NexText iHum = NexText(0, 255, "iHum");
-NexText iHumTrend = NexText(0, 255, "iHumTrend");
 NexText iHumMin = NexText(0, 255, "iHumMin");
 NexText iHumMax = NexText(0, 255, "iHumMax");
 
 NexText oTempSign = NexText(0, 255, "oTempSign");
 NexText oTemp = NexText(0, 255, "oTemp");
-NexText oTempTrend = NexText(0, 255, "oTempTrend");
 NexText oTempFract = NexText(0, 255, "oTempFract");
 NexText oTempMin = NexText(0, 255, "oTempMin");
 NexText oTempMax = NexText(0, 255, "oTempMax");
 NexText oDewPoint = NexText(0, 255, "oDewPoint");
 NexText oHumIndex = NexText(0, 255, "oHumIndex");
 NexText oHum = NexText(0, 255, "oHum");
-NexText oHumTrend = NexText(0, 255, "oHumTrend");
 NexText oHumMin = NexText(0, 255, "oHumMin");
 NexText oHumMax = NexText(0, 255, "oHumMax");
 
@@ -44,9 +40,7 @@ NexText oBatt = NexText(0, 255, "oBatt");
 NexPicture forecastImg = NexPicture(0, 16, "forecastImg");
 NexText forecast = NexText(0, 5, "forecast");
 NexText co2 = NexText(0, 255, "co2");
-NexText co2Trend = NexText(0, 255, "co2Trend");
 NexText pressure = NexText(0, 255, "pressure");
-NexText pressureTrend = NexText(0, 255, "pressureTrend");
 
 NexText dateText = NexText(0, 255, "date");
 NexText hourText = NexText(0, 255, "hour");
@@ -93,6 +87,9 @@ static uint32_t getCO2Color(int16_t co2)
     } else if (co2 > 5000)
     {
         return 57376;
+    } else 
+    {
+        return 0;
     }
 }
 
@@ -182,19 +179,6 @@ static void printCurrentOutdoorSensor()
     );
     oTempFract.setText(displayBuffer);
 
-    switch (getTrend(externalTemperatureLastHour[currentOutdoorSensorId], 0, 60))
-    {
-        case T_RISING:
-            oTempTrend.setText("8");
-            break;
-        case T_FALLING:
-            oTempTrend.setText("9");
-            break;
-        default:
-            oTempTrend.setText(":");
-            break;
-    }
-
     displayBuffer[0] = '\0';
     snprintf(
             displayBuffer,
@@ -231,19 +215,6 @@ static void printCurrentOutdoorSensor()
     );
     oHum.setText(displayBuffer);
 
-    switch (getTrend(externalHumidityLastHour[currentOutdoorSensorId], 0, 60))
-    {
-        case T_RISING:
-            oHumTrend.setText("8");
-            break;
-        case T_FALLING:
-            oHumTrend.setText("9");
-            break;
-        default:
-            oHumTrend.setText(":");
-            break;
-    }
-
     displayBuffer[0] = '\0';
     snprintf(
             displayBuffer,
@@ -261,156 +232,6 @@ static void printCurrentOutdoorSensor()
             getIntegerFromFloat(externalSensorData[currentOutdoorSensorId].humidityMax)
     );
     oHumMax.setText(displayBuffer);
-}
-
-static void printTime()
-{
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", hour());
-    hourText.setText(displayBuffer);
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", minute());
-    minuteText.setText(displayBuffer);
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d.%02d.%02d", day(), month(), year() - 2000);
-    dateText.setText(displayBuffer);
-}
-
-static void printIndoorSensor()
-{
-    iTempSign.setText(internalSensorData.temperature < 0 ? "-" : " ");
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", getIntegerFromFloat(internalSensorData.temperature));
-    iTemp.setText(displayBuffer);
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, ".%d", getFractionFromFloat(internalSensorData.temperature));
-    iTempFract.setText(displayBuffer);
-
-    switch (getTrend(temperatureLastHour, 0, 60))
-    {
-        case T_RISING:
-            iTempTrend.setText("8");
-            break;
-        case T_FALLING:
-            iTempTrend.setText("9");
-            break;
-        default:
-            iTempTrend.setText(":");
-            break;
-    }
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.temperatureMin);
-    iTempMin.setText(displayBuffer);
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.temperatureMax);
-    iTempMax.setText(displayBuffer);
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.dewPoint);
-    iDewPoint.setText(displayBuffer);
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.humIndex);
-    iHumIndex.setText(displayBuffer);
-    iHumIndex.setFont(getHumindexColor((int) internalSensorData.humIndex));
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) abs(internalSensorData.humidity));
-    iHum.setText(displayBuffer);
-
-    switch (getTrend(humidityLastHour, 0, 60))
-    {
-        case T_RISING:
-            iHumTrend.setText("8");
-            break;
-        case T_FALLING:
-            iHumTrend.setText("9");
-            break;
-        default:
-            iHumTrend.setText(":");
-            break;
-    }
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", getIntegerFromFloat(internalSensorData.humidityMin));
-    iHumMin.setText(displayBuffer);
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", getIntegerFromFloat(internalSensorData.humidityMax));
-    iHumMax.setText(displayBuffer);
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%i", internalSensorData.co2);
-    co2.setText(displayBuffer);
-    co2.setFont(getCO2Color(internalSensorData.co2));
-
-    switch (getTrend(co2LastHour, 0, 3))
-    {
-        case T_RISING:
-            co2Trend.setText("8");
-            break;
-        case T_FALLING:
-            co2Trend.setText("9");
-            break;
-        default:
-            co2Trend.setText(":");
-            break;
-    }
-
-    displayBuffer[0] = '\0';
-    snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%i", internalSensorData.pressureMmHg);
-    pressure.setText(displayBuffer);
-
-    if (0 == pressureLast24H[21])
-    {
-        pressureTrend.setText(":");
-    } else
-    {
-        // Trend for last 3h
-        switch (getTrend(pressureLast24H, 21, 3))
-        {
-            case T_RISING:
-                pressureTrend.setText("8");
-                break;
-            case T_FALLING:
-                pressureTrend.setText("9");
-                break;
-            default:
-                pressureTrend.setText(":");
-                break;
-        }
-    }
-}
-
-static void printWifiStatus()
-{
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        wifiSignal.setText("0");
-        wifiSignal.Set_font_color_pco(57376); //Red
-    } else
-    {
-        int8_t rssi = WiFi.RSSI();
-        if (rssi <= -85)
-        {
-            wifiSignal.setText("1");
-            wifiSignal.Set_font_color_pco(65535); // White
-        } else if (rssi > -85 && rssi <= -67)
-        {
-            wifiSignal.setText("2");
-            wifiSignal.Set_font_color_pco(65535); // White
-        } else if (rssi > -67)
-        {
-            wifiSignal.setText("3");
-            wifiSignal.Set_font_color_pco(65535); // White
-        }
-    }
 }
 
 static void printAccessPoints(uint8_t page)
@@ -488,41 +309,6 @@ static void printAccessPoints(uint8_t page)
     }
 }
 
-static void printForecast()
-{
-    if (strcmp(weather_condition, "clear-night") == 0 || strcmp(weather_condition, "sunny") == 0)
-    {
-        forecastImg.setPic(1);
-    } else if (strcmp(weather_condition, "cloudy") == 0 || strcmp(weather_condition, "windy-variant") == 0 ||
-               strcmp(weather_condition, "fog") == 0 || strcmp(weather_condition, "windy") == 0)
-    {
-        forecastImg.setPic(8);
-    } else if (strcmp(weather_condition, "hail") == 0 || strcmp(weather_condition, "pouring") == 0)
-    {
-        forecastImg.setPic(5);
-    } else if (strcmp(weather_condition, "rainy") == 0)
-    {
-        forecastImg.setPic(2);
-    } else if (strcmp(weather_condition, "snowy") == 0 || strcmp(weather_condition, "snowy-rainy") == 0)
-    {
-        forecastImg.setPic(6);
-    } else if (strcmp(weather_condition, "lightning") == 0 || strcmp(weather_condition, "lightning-rainy") == 0)
-    {
-        forecastImg.setPic(7);
-    } else if (strcmp(weather_condition, "partlycloudy") == 0)
-    {
-        forecastImg.setPic(8);
-    } else
-    {
-        forecastImg.setPic(9);
-    }
-
-    char condition[20];
-    strcpy(condition, weather_condition);
-    condition[0] = toupper(condition[0]);
-    forecast.setText(condition);
-}
-
 void initDisplay()
 {
     nexInit();
@@ -552,6 +338,8 @@ void oHot1PushCallback(void *ptr)
     displayBuffer[0] = '\0';
     itoa(currentOutdoorSensorId + 1, displayBuffer, 10);
 
+    preferences.putUInt("sensorId", currentOutdoorSensorId);
+
     printCurrentOutdoorSensor();
 }
 
@@ -565,6 +353,8 @@ void oHot2PushCallback(void *ptr)
 
     displayBuffer[0] = '\0';
     itoa(currentOutdoorSensorId + 1, displayBuffer, 10);
+
+     preferences.putUInt("sensorId", currentOutdoorSensorId);
 
     printCurrentOutdoorSensor();
 }
@@ -714,10 +504,128 @@ void redrawDisplay()
     {
         lastDisplayUpdateTime = millis();
 
-        printWifiStatus();
-        printIndoorSensor();
-        printTime();
+        if (internalSensorData.lux >= 4)
+        {
+            sendCommand("bl.val=100");
+        } else
+        {
+            sendCommand("bl.val=5");
+        }
+
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            wifiSignal.setText("0");
+            wifiSignal.Set_font_color_pco(57376); //Red
+        } else
+        {
+            int8_t rssi = WiFi.RSSI();
+            if (rssi <= -85)
+            {
+                wifiSignal.setText("1");
+                wifiSignal.Set_font_color_pco(65535); // White
+            } else if (rssi > -85 && rssi <= -67)
+            {
+                wifiSignal.setText("2");
+                wifiSignal.Set_font_color_pco(65535); // White
+            } else if (rssi > -67)
+            {
+                wifiSignal.setText("3");
+                wifiSignal.Set_font_color_pco(65535); // White
+            }
+        }
+
+        iTempSign.setText(internalSensorData.temperature < 0 ? "-" : " ");
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", getIntegerFromFloat(internalSensorData.temperature));
+        iTemp.setText(displayBuffer);
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, ".%d", getFractionFromFloat(internalSensorData.temperature));
+        iTempFract.setText(displayBuffer);
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.temperatureMin);
+        iTempMin.setText(displayBuffer);
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.temperatureMax);
+        iTempMax.setText(displayBuffer);
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.dewPoint);
+        iDewPoint.setText(displayBuffer);
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) internalSensorData.humIndex);
+        iHumIndex.setText(displayBuffer);
+        iHumIndex.setFont(getHumindexColor((int) internalSensorData.humIndex));
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", (int) abs(internalSensorData.humidity));
+        iHum.setText(displayBuffer);
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", getIntegerFromFloat(internalSensorData.humidityMin));
+        iHumMin.setText(displayBuffer);
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", getIntegerFromFloat(internalSensorData.humidityMax));
+        iHumMax.setText(displayBuffer);
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%i", internalSensorData.co2);
+        co2.setText(displayBuffer);
+        co2.setFont(getCO2Color(internalSensorData.co2));
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%i", internalSensorData.pressureMmHg);
+        pressure.setText(displayBuffer);
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", hour());
+        hourText.setText(displayBuffer);
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d", minute());
+        minuteText.setText(displayBuffer);
+
+        displayBuffer[0] = '\0';
+        snprintf(displayBuffer, DISPLAY_BUFFER_SIZE, "%02d.%02d.%02d", day(), month(), year() - 2000);
+        dateText.setText(displayBuffer);
+
         printCurrentOutdoorSensor();
-        printForecast();
+
+        if (strcmp(weather_condition, "clear-night") == 0 || strcmp(weather_condition, "sunny") == 0)
+        {
+            forecastImg.setPic(1);
+        } else if (strcmp(weather_condition, "cloudy") == 0 || strcmp(weather_condition, "windy-variant") == 0 ||
+                   strcmp(weather_condition, "fog") == 0 || strcmp(weather_condition, "windy") == 0)
+        {
+            forecastImg.setPic(8);
+        } else if (strcmp(weather_condition, "hail") == 0 || strcmp(weather_condition, "pouring") == 0)
+        {
+            forecastImg.setPic(5);
+        } else if (strcmp(weather_condition, "rainy") == 0)
+        {
+            forecastImg.setPic(2);
+        } else if (strcmp(weather_condition, "snowy") == 0 || strcmp(weather_condition, "snowy-rainy") == 0)
+        {
+            forecastImg.setPic(6);
+        } else if (strcmp(weather_condition, "lightning") == 0 || strcmp(weather_condition, "lightning-rainy") == 0)
+        {
+            forecastImg.setPic(7);
+        } else if (strcmp(weather_condition, "partlycloudy") == 0)
+        {
+            forecastImg.setPic(8);
+        } else
+        {
+            forecastImg.setPic(9);
+        }
+
+        char condition[20];
+        strncpy(condition, weather_condition, 20);
+        condition[0] = toupper(condition[0]);
+        forecast.setText(condition);
     }
 }

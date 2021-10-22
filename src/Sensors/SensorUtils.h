@@ -9,11 +9,11 @@ struct InternalSensorData
     bool initialized = false;
     int16_t co2;
     float temperature;
-    float temperatureMin = NULL;
-    float temperatureMax = NULL;
+    float temperatureMin = 0;
+    float temperatureMax = 0;
     float humidity;
-    float humidityMin = NULL;
-    float humidityMax = NULL;
+    float humidityMin = 0;
+    float humidityMax = 0;
     float pressure; //hPa
     int16_t pressureMmHg;
     float dewPoint;

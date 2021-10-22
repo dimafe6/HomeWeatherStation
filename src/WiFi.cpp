@@ -53,7 +53,10 @@ void WiFiEvent(WiFiEvent_t event)
             break;
         case SYSTEM_EVENT_STA_LOST_IP:
             ESP_LOGI(TAG, "Lost IP address and IP address is reset to 0");
-            WiFi.reconnect();
+            if (WiFi.getAutoReconnect())
+            {
+                WiFi.reconnect();
+            }
             break;
         case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
             ESP_LOGI(TAG, "WiFi Protected Setup (WPS): succeeded in enrollee mode");

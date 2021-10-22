@@ -3,7 +3,6 @@
 #include "./src/Nextion/Nextion.h"
 #include "./src/RF.h"
 #include "./src/RTC.h"
-#include "./src/Radio.h"
 #include "./src/Display.h"
 #include "./src/WiFi.h"
 #include "./src/Sensors/CO2Sensor.h"
@@ -28,11 +27,16 @@ void setup()
 {
     vSemaphoreCreateBinary(xMQTTMutex);
 
-    esp_log_level_set("*", ESP_LOG_DEBUG);
+    esp_log_level_set("*", ESP_LOG_VERBOSE);
     Serial.begin(115200);
     Wire.begin();
 
     ESP_LOGI(TAG, "Initializing...");
+
+    preferences.begin("conf", false);
+
+    currentOutdoorSensorId = preferences.getUInt("sensorId", 0);
+    ESP_LOGI(TAG, "sensorId: %u", currentOutdoorSensorId);
 
     uint8_t mac_bytes[6];
     esp_read_mac(mac_bytes, ESP_MAC_WIFI_STA);
@@ -50,11 +54,6 @@ void setup()
 
     snprintf(lwt_topic, 28, "hws/%s/lwt", mac_address);
 
-    mqttClient.enableLastWillMessage(lwt_topic, "offline");
-    mqttClient.setMaxPacketSize(2048);
-    mqttClient.setMqttReconnectionAttemptDelay(2000);
-    mqttClient.enableDebuggingMessages(true);
-
     initDisplay();
     initRtc();
     initWiFi();
@@ -62,6 +61,12 @@ void setup()
     initMHZ19();
     initBH1750();
     initBME280();
+
+    mqttClient.enableLastWillMessage(lwt_topic, "offline");
+    mqttClient.setMaxPacketSize(3072);
+    mqttClient.setMqttReconnectionAttemptDelay(1000);
+    mqttClient.enableDebuggingMessages(true);
+    mqttClient.enableMQTTPersistence();
 
     runner.init();
     runner.addTask(task_nrf24);

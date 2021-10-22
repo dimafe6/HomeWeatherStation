@@ -6,7 +6,7 @@
 #include "Globals.h"
 #include "EspMQTTClient.h"
 #include <ArduinoJson.h>
-#include "rom/rtc.h"
+#include "esp32/rom/rtc.h"
 
 extern EspMQTTClient mqttClient;
 
